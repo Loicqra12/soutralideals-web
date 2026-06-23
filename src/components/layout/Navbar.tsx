@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   ChevronDown,
   Heart,
+  MessageSquare,
   Package,
   Wrench,
   Laptop,
@@ -247,6 +248,12 @@ function UserMenu() {
             <Link href="/profile">
               <User className="h-4 w-4" />
               Mon profil
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/messages">
+              <MessageSquare className="h-4 w-4" />
+              Messages
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

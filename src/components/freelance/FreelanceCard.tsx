@@ -5,6 +5,7 @@ import { Star, MapPin, BadgeCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { BLUR_DEFAULT } from "@/lib/utils/imageBlur";
 import type { Freelance } from "@/types";
 import {
   getCategoryLabel,
@@ -68,6 +69,8 @@ export function FreelanceCard({ freelance }: { freelance: Freelance }) {
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover"
+                  placeholder="blur"
+                  blurDataURL={BLUR_DEFAULT}
                 />
               </motion.div>
             )}
@@ -124,6 +127,8 @@ export function FreelanceCard({ freelance }: { freelance: Freelance }) {
                     width={44}
                     height={44}
                     className="h-full w-full object-cover"
+                    placeholder="blur"
+                    blurDataURL={BLUR_DEFAULT}
                   />
                 ) : (
                   getInitials(name)

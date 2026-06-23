@@ -10,6 +10,7 @@ import { resolveMediaUrl } from "@/lib/utils/mediaUrl";
 import type { Article } from "@/types";
 import { cardHover, imageZoom, fadeInUp } from "@/lib/animations";
 import { FavoriteButton } from "@/components/shared/FavoriteButton";
+import { BLUR_DEFAULT } from "@/lib/utils/imageBlur";
 
 export function ArticleCard({ article }: { article: Article }) {
   const imageUrl = resolveMediaUrl(article.photoArticle);
@@ -49,6 +50,8 @@ export function ArticleCard({ article }: { article: Article }) {
                     "object-cover transition-opacity",
                     !inStock && "opacity-60",
                   )}
+                  placeholder="blur"
+                  blurDataURL={BLUR_DEFAULT}
                 />
               </motion.div>
             ) : (

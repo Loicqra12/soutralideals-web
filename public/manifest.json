@@ -1,0 +1,36 @@
+{
+  "name": "Soutrali Deals",
+  "short_name": "Soutrali",
+  "description": "Marketplace ivoirienne — prestataires, freelances et e-commerce local",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1b5e3b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-default.png",
+      "type": "image/png",
+      "sizes": "1200x630",
+      "form_factor": "wide"
+    }
+  ],
+  "categories": ["shopping", "business", "lifestyle"],
+  "lang": "fr",
+  "dir": "ltr",
+  "scope": "/"
+}

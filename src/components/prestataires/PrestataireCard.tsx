@@ -5,6 +5,7 @@ import { Star, MapPin, BadgeCheck, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { BLUR_DEFAULT } from "@/lib/utils/imageBlur";
 import type { Prestataire } from "@/types";
 import {
   getCategoryLabel,
@@ -62,6 +63,8 @@ export function PrestataireCard({ prestataire }: { prestataire: Prestataire }) {
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover"
+                  placeholder="blur"
+                  blurDataURL={BLUR_DEFAULT}
                 />
               </motion.div>
             )}
@@ -114,6 +117,8 @@ export function PrestataireCard({ prestataire }: { prestataire: Prestataire }) {
                     width={44}
                     height={44}
                     className="h-full w-full object-cover"
+                    placeholder="blur"
+                    blurDataURL={BLUR_DEFAULT}
                   />
                 ) : (
                   getInitials(name)
