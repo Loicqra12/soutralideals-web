@@ -13,6 +13,8 @@ import { telHref, whatsappHref } from "@/lib/utils/contact";
 import { formatPriceFCFA } from "@/lib/utils/format";
 import { fadeInUp, scaleIn } from "@/lib/animations";
 import { AvisSection } from "@/components/shared/AvisSection";
+import { JsonLd } from "@/components/shared/JsonLd";
+import { StartConversationButton } from "@/components/shared/StartConversationButton";
 import {
   getCategoryLabel,
   getEntityServiceId,
@@ -77,8 +79,23 @@ export default function PrestataireDetailPage({
   const serviceId = getEntityServiceId(prestataire.service);
   const tarif = prestataire.tarifHoraireMin ?? prestataire.prixprestataire;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name,
+    description: prestataire.description ?? `${serviceLabel ?? "Prestataire"} à ${ville ?? "Côte d'Ivoire"}`,
+    ...(photo && { image: photo }),
+    ...(ville && { address: { "@type": "PostalAddress", addressLocality: ville, addressCountry: "CI" } }),
+    ...(prestataire.note && prestataire.note > 0 && {
+      aggregateRating: { "@type": "AggregateRating", ratingValue: prestataire.note, bestRating: 5, reviewCount: prestataire.nbAvis ?? 1 },
+    }),
+    ...(tarif && { priceRange: `${tarif} FCFA` }),
+    url: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/prestataires/${prestataire._id}`,
+  };
+
   return (
     <>
+      <JsonLd data={jsonLd} />
       <div className="min-h-screen bg-neutral-50">
         <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8">
           <Button variant="ghost" size="sm" asChild className="mb-6 -ml-2">
@@ -257,6 +274,16 @@ export default function PrestataireDetailPage({
                       </a>
                     </Button>
                   )}
+
+                  {/* Message in-app */}
+                  <StartConversationButton
+                    destinataireUserId={
+                      typeof prestataire.utilisateur === "object"
+                        ? prestataire.utilisateur?._id
+                        : prestataire.utilisateur
+                    }
+                    className="w-full"
+                  />
                 </div>
               </div>
             </motion.div>

@@ -11,6 +11,8 @@ import { EntityImage } from "@/components/shared/EntityImage";
 import { telHref, whatsappHref } from "@/lib/utils/contact";
 import { formatPriceFCFA } from "@/lib/utils/format";
 import { fadeInUp, scaleIn } from "@/lib/animations";
+import { JsonLd } from "@/components/shared/JsonLd";
+import { StartConversationButton } from "@/components/shared/StartConversationButton";
 import { AvisSection } from "@/components/shared/AvisSection";
 import {
   getCategoryLabel,
@@ -76,10 +78,34 @@ export default function FreelanceDetailPage({
   const phoneLink = telHref(phone);
   const waLink = whatsappHref(phone, `Bonjour ${name}, je vous contacte via Soutrali Deals pour discuter de votre profil freelance.`);
   const image = freelance.imagePath ?? freelance.photoProfil;
+  const resolvedImage = image ? image : undefined;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name,
+    jobTitle: subtitle ?? "Freelance",
+    description: freelance.description,
+    ...(resolvedImage && { image: resolvedImage }),
+    ...(ville && { address: { "@type": "PostalAddress", addressLocality: ville, addressCountry: "CI" } }),
+    ...(note && note > 0 && {
+      aggregateRating: { "@type": "AggregateRating", ratingValue: note, bestRating: 5, reviewCount: freelance.completedJobs ?? 1 },
+    }),
+    url: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/freelance/${freelance._id}`,
+  };
+
+  const utilisateurId =
+    typeof freelance.utilisateur === "object"
+      ? freelance.utilisateur?._id
+      : typeof freelance.utilisateur === "string"
+        ? freelance.utilisateur
+        : undefined;
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8">
+    <>
+      <JsonLd data={jsonLd} />
+      <div className="min-h-screen bg-neutral-50">
+        <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8">
         <Button variant="ghost" size="sm" asChild className="mb-6 -ml-2">
           <Link href="/freelance">
             <ArrowLeft className="mr-2 h-4 w-4" /> Retour
@@ -215,6 +241,12 @@ export default function FreelanceDetailPage({
                   </Button>
                 )}
 
+                {/* Message in-app */}
+                <StartConversationButton
+                  destinataireUserId={utilisateurId}
+                  className="w-full"
+                />
+
                 {freelance.completedJobs != null && freelance.completedJobs > 0 && (
                   <div className="flex items-center gap-2 pt-2 text-sm text-neutral-500">
                     <Briefcase className="h-4 w-4" />
@@ -225,7 +257,8 @@ export default function FreelanceDetailPage({
             </div>
           </motion.div>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

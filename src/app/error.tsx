@@ -12,6 +12,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error("[GlobalError]", error);
+    // Sentry.captureException(error); // Décommenter après avoir défini NEXT_PUBLIC_SENTRY_DSN
   }, [error]);
 
   return (

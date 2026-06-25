@@ -15,6 +15,7 @@ import {
 } from "@/lib/utils/listingDisplay";
 import { resolveMediaUrl } from "@/lib/utils/mediaUrl";
 import { cardHover, imageZoom, fadeInUp } from "@/lib/animations";
+import { formatDistance } from "@/lib/utils/haversine";
 import { FavoriteButton } from "@/components/shared/FavoriteButton";
 
 function getInitials(name: string): string {
@@ -26,7 +27,13 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-export function PrestataireCard({ prestataire }: { prestataire: Prestataire }) {
+export function PrestataireCard({
+  prestataire,
+  distanceKm,
+}: {
+  prestataire: Prestataire;
+  distanceKm?: number;
+}) {
   const name = getUtilisateurDisplayName(
     prestataire.nom,
     prestataire.prenom,
@@ -161,6 +168,11 @@ export function PrestataireCard({ prestataire }: { prestataire: Prestataire }) {
                   <span className="flex items-center gap-0.5 text-xs text-neutral-500">
                     <Clock className="h-3.5 w-3.5" />
                     {prestataire.anneeExperience}
+                  </span>
+                )}
+                {distanceKm != null && (
+                  <span className="flex items-center gap-0.5 rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-semibold text-primary-700">
+                    📍 {formatDistance(distanceKm)}
                   </span>
                 )}
               </div>

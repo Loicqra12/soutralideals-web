@@ -16,6 +16,7 @@ import { EntityImage } from "@/components/shared/EntityImage";
 import { telHref, whatsappHref } from "@/lib/utils/contact";
 import { formatPriceFCFA } from "@/lib/utils/format";
 import { fadeInUp, scaleIn } from "@/lib/animations";
+import { JsonLd } from "@/components/shared/JsonLd";
 import type { Vendeur } from "@/types";
 
 function getVendeurContact(vendeur?: string | Vendeur) {
@@ -93,8 +94,30 @@ export default function ArticleDetailPage({
     }
   };
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: article.nomArticle,
+    description: article.description,
+    ...(article.photoArticle && { image: [article.photoArticle] }),
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "XOF",
+      price: article.prixArticle,
+      availability: inStock
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+      seller: { "@type": "Organization", name: shopName ?? "Soutrali Deals" },
+    },
+    ...(article.rating && article.rating > 0 && {
+      aggregateRating: { "@type": "AggregateRating", ratingValue: article.rating, bestRating: 5, reviewCount: 1 },
+    }),
+  };
+
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <>
+      <JsonLd data={jsonLd} />
+      <div className="min-h-screen bg-neutral-50">
       <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8">
         <Button variant="ghost" size="sm" asChild className="mb-6 -ml-2">
           <Link href="/emarche">
@@ -219,5 +242,6 @@ export default function ArticleDetailPage({
         </div>
       </div>
     </div>
+    </>
   );
 }

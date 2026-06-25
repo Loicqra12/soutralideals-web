@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
-import { SmartSearchBar } from "@/components/shared/SmartSearchBar";
+import { LocalSearchInput } from "@/components/shared/LocalSearchInput";
 import { useFreelances } from "@/lib/hooks/useFreelances";
 import { useServicesByGroupe } from "@/lib/hooks/useServices";
 import { FreelanceCard } from "@/components/freelance/FreelanceCard";
@@ -99,9 +99,11 @@ function FreelanceContent() {
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="flex-1 max-w-lg">
-              <SmartSearchBar
+              <LocalSearchInput
+                value={search}
+                onChange={(v) => { setSearch(v); setPage(1); }}
                 placeholder="Développeur, designer, SEO…"
-                className="w-full"
+                accentColor="blue"
               />
             </div>
             <button

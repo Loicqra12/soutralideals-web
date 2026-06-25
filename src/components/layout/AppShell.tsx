@@ -3,6 +3,7 @@ import { MobileHeader } from "./MobileHeader";
 import { BottomNav } from "./BottomNav";
 import { Footer } from "./Footer";
 import { CookieBanner } from "@/components/consent/CookieBanner";
+import { ServiceWorkerProvider } from "@/components/providers/ServiceWorkerProvider";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile bottom nav (Accueil / Métiers / Freelance / E-marché / Profil) */}
       <BottomNav />
       <CookieBanner />
+      <ServiceWorkerProvider />
     </>
   );
 }

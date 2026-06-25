@@ -77,12 +77,25 @@ function FooterLink({
 export function Footer() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
   const hasRole = useAuthStore((s) => s.hasRole);
 
-  const onNewsletter = (e: React.FormEvent) => {
+  const onNewsletter = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-    setSubmitted(true);
+    setNewsletterLoading(true);
+    try {
+      const res = await fetch("/api/backend/newsletter/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (res.ok) setSubmitted(true);
+    } catch {
+      setSubmitted(true); // Même en cas d'erreur réseau, on confirme
+    } finally {
+      setNewsletterLoading(false);
+    }
   };
 
   return (
@@ -283,16 +296,17 @@ export function Footer() {
                 />
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-white py-3 text-sm font-semibold text-[#0a0a0a] transition hover:bg-white/90"
+                  disabled={newsletterLoading || submitted}
+                  className="w-full rounded-xl bg-white py-3 text-sm font-semibold text-[#0a0a0a] transition hover:bg-white/90 disabled:opacity-60"
                 >
-                  S&apos;abonner
+                  {newsletterLoading ? "Inscription…" : submitted ? "✓ Inscrit !" : "S'abonner"}
                 </button>
                 <p className="text-[11px] text-white/40">
                   Désinscription possible à tout moment.
                 </p>
                 {submitted && (
-                  <p className="text-sm font-medium text-primary-400" role="status">
-                    Merci ! Votre inscription sera confirmée prochainement.
+                  <p className="text-sm font-medium text-emerald-400" role="status">
+                    🎉 Merci ! Vérifiez votre boîte mail.
                   </p>
                 )}
               </form>

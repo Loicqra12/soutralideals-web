@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { Star } from "lucide-react";
-import { SmartSearchBar } from "@/components/shared/SmartSearchBar";
+import { LocalSearchInput } from "@/components/shared/LocalSearchInput";
 import { useArticles } from "@/lib/hooks/useArticles";
 import { useVendeurs } from "@/lib/hooks/useVendeurs";
 import { useCategoriesByPole } from "@/lib/hooks/useCategories";
@@ -50,9 +50,11 @@ function EmarcheContent() {
           </p>
 
           <div className="mt-6 max-w-lg">
-            <SmartSearchBar
+            <LocalSearchInput
+              value={search}
+              onChange={(v) => setSearch(v)}
               placeholder="Robe, chaussures, alimentaire…"
-              className="w-full"
+              accentColor="purple"
             />
           </div>
         </div>

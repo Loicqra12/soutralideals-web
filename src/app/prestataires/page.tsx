@@ -2,9 +2,11 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
-import { SlidersHorizontal, X } from "lucide-react";
-import { SmartSearchBar } from "@/components/shared/SmartSearchBar";
+import { Loader2, MapPin, Navigation, SlidersHorizontal, X } from "lucide-react";
+import { LocalSearchInput } from "@/components/shared/LocalSearchInput";
 import { usePrestataires } from "@/lib/hooks/usePrestataires";
+import { useNearbyPrestataires } from "@/lib/hooks/useNearbyPrestataires";
+import { formatDistance } from "@/lib/utils/haversine";
 import { useServicesByGroupe } from "@/lib/hooks/useServices";
 import { PrestataireCard } from "@/components/prestataires/PrestataireCard";
 import { ServiceScroll } from "@/components/home/ServiceScroll";
@@ -32,6 +34,7 @@ function PrestatairesContent() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
+  const [nearbyMode, setNearbyMode] = useState(false);
 
   const apiFilters = useMemo(
     () => ({ service: serviceId ?? undefined, limit: 200 }),
@@ -42,6 +45,13 @@ function PrestatairesContent() {
     POLE_GROUPE_NAMES.metiers,
   );
   const { data, isLoading, error } = usePrestataires(apiFilters);
+  const {
+    nearby,
+    requesting: locRequesting,
+    locationError,
+    requestLocation,
+    hasLocation,
+  } = useNearbyPrestataires(data ?? [], 25);
 
   const filtered = useMemo(() => {
     return (data ?? []).filter((p) => {
@@ -67,8 +77,9 @@ function PrestatairesContent() {
     });
   }, [data, search, serviceId, serviceName, villeFilter, verifiedOnly]);
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const displayList = nearbyMode && hasLocation ? nearby : filtered;
+  const totalPages = Math.ceil(displayList.length / PAGE_SIZE);
+  const paginated = displayList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const activeFilterCount = [villeFilter, verifiedOnly].filter(Boolean).length;
 
   return (
@@ -84,12 +95,37 @@ function PrestatairesContent() {
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+            {/* Bouton "Près de moi" */}
+            <button
+              onClick={async () => {
+                if (!hasLocation) await requestLocation();
+                setNearbyMode((v) => !v);
+                setPage(1);
+              }}
+              disabled={locRequesting}
+              className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
+                nearbyMode && hasLocation
+                  ? "border-primary-600 bg-primary-600 text-white"
+                  : "border-neutral-200 bg-white text-neutral-700 hover:border-primary-400 hover:text-primary-600"
+              } disabled:opacity-50`}
+            >
+              {locRequesting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Navigation className="h-4 w-4" />
+              )}
+              Près de moi
+            </button>
             <div className="flex-1 max-w-lg">
-              <SmartSearchBar
+              <LocalSearchInput
+                value={search}
+                onChange={(v) => { setSearch(v); setPage(1); }}
                 placeholder="Plombier, coiffeur, électricien…"
-                className="w-full"
               />
             </div>
+            {locationError && (
+              <p className="text-xs text-red-500 sm:col-span-2">{locationError}</p>
+            )}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex h-12 items-center gap-2 rounded-xl border px-4 text-sm font-medium transition-colors ${
@@ -190,7 +226,10 @@ function PrestatairesContent() {
             <AnimatedGrid className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {paginated.map((p) => (
                 <AnimatedItem key={p._id}>
-                  <PrestataireCard prestataire={p} />
+                  <PrestataireCard
+                    prestataire={p}
+                    distanceKm={(p as { distanceKm?: number }).distanceKm}
+                  />
                 </AnimatedItem>
               ))}
             </AnimatedGrid>
