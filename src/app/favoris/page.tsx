@@ -1,21 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { Heart, ArrowLeft, Briefcase, User, ShoppingBag } from "lucide-react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFavorites, useToggleFavorite } from "@/lib/hooks/useFavorites";
 import type { FavoriteType } from "@/lib/api/favorites";
 import { Button } from "@/components/ui/button";
-import { fadeInUp } from "@/lib/animations";
-import { AnimatedGrid, AnimatedItem } from "@/components/shared/AnimatedGrid";
+import { AnimatedGrid } from "@/components/shared/AnimatedGrid";
 import { formatPriceFCFA } from "@/lib/utils/format";
+import { cn } from "@/lib/utils";
 
-const TYPE_FILTERS: { value: FavoriteType | ""; label: string }[] = [
-  { value: "", label: "Tous" },
-  { value: "PRESTATAIRE", label: "Prestataires" },
-  { value: "FREELANCE", label: "Freelances" },
-  { value: "ARTICLE", label: "Produits" },
+const TYPE_FILTERS: {
+  value: FavoriteType | "";
+  label: string;
+  icon: typeof Heart;
+}[] = [
+  { value: "", label: "Tous", icon: Heart },
+  { value: "PRESTATAIRE", label: "Prestataires", icon: User },
+  { value: "FREELANCE", label: "Freelances", icon: Briefcase },
+  { value: "ARTICLE", label: "Produits", icon: ShoppingBag },
 ];
 
 const TYPE_HREF: Record<FavoriteType, (id: string) => string> = {
@@ -25,12 +29,39 @@ const TYPE_HREF: Record<FavoriteType, (id: string) => string> = {
   VENDEUR: (id) => `/emarche`,
 };
 
+const TYPE_LABELS: Record<FavoriteType, string> = {
+  PRESTATAIRE: "Prestataire",
+  FREELANCE: "Freelance",
+  ARTICLE: "Produit",
+  VENDEUR: "Vendeur",
+};
+
 export default function FavorisPage() {
   const [typeFilter, setTypeFilter] = useState<FavoriteType | "">("");
-  const { data: favorites, isLoading } = useFavorites(typeFilter || undefined);
+  const { data: allFavorites, isLoading: loadingAll } = useFavorites();
+  const { data: filteredFavorites, isLoading: loadingFiltered } = useFavorites(
+    typeFilter || undefined,
+  );
   const { mutate: toggle } = useToggleFavorite();
 
-  const list = favorites ?? [];
+  const counts = useMemo(() => {
+    const list = allFavorites ?? [];
+    return {
+      total: list.length,
+      PRESTATAIRE: list.filter((f) => f.objetType === "PRESTATAIRE").length,
+      FREELANCE: list.filter((f) => f.objetType === "FREELANCE").length,
+      ARTICLE: list.filter((f) => f.objetType === "ARTICLE").length,
+      VENDEUR: list.filter((f) => f.objetType === "VENDEUR").length,
+    };
+  }, [allFavorites]);
+
+  const list = typeFilter ? (filteredFavorites ?? []) : (allFavorites ?? []);
+  const isLoading = typeFilter ? loadingFiltered : loadingAll;
+
+  const getCount = (value: FavoriteType | "") => {
+    if (!value) return counts.total;
+    return counts[value] ?? 0;
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -43,24 +74,74 @@ export default function FavorisPage() {
 
         <h1 className="text-2xl font-bold text-neutral-900">Mes favoris</h1>
         <p className="mt-1 text-neutral-500">
-          {list.length} favori{list.length > 1 ? "s" : ""}
+          {counts.total} favori{counts.total > 1 ? "s" : ""} sauvegardé{counts.total > 1 ? "s" : ""}
         </p>
 
-        {/* Filters */}
+        {/* Summary counters */}
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {TYPE_FILTERS.filter((f) => f.value !== "").map((f) => {
+            const Icon = f.icon;
+            const count = getCount(f.value);
+            return (
+              <button
+                key={f.value}
+                onClick={() => setTypeFilter(f.value)}
+                className={cn(
+                  "rounded-2xl border p-4 text-left transition-all",
+                  typeFilter === f.value
+                    ? "border-neutral-900 bg-neutral-900 text-white shadow-md"
+                    : "border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm",
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "h-5 w-5",
+                    typeFilter === f.value ? "text-white" : "text-neutral-400",
+                  )}
+                />
+                <p className="mt-2 text-2xl font-bold">{count}</p>
+                <p
+                  className={cn(
+                    "text-xs font-medium",
+                    typeFilter === f.value ? "text-white/70" : "text-neutral-500",
+                  )}
+                >
+                  {f.label}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Tab filters */}
         <div className="mt-5 flex flex-wrap gap-2">
-          {TYPE_FILTERS.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setTypeFilter(f.value)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                typeFilter === f.value
-                  ? "bg-neutral-900 text-white"
-                  : "border border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+          {TYPE_FILTERS.map((f) => {
+            const count = getCount(f.value);
+            return (
+              <button
+                key={f.value || "all"}
+                onClick={() => setTypeFilter(f.value)}
+                className={cn(
+                  "flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                  typeFilter === f.value
+                    ? "bg-neutral-900 text-white"
+                    : "border border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400",
+                )}
+              >
+                {f.label}
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                    typeFilter === f.value
+                      ? "bg-white/20 text-white"
+                      : "bg-neutral-100 text-neutral-500",
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="mt-6">
@@ -77,6 +158,7 @@ export default function FavorisPage() {
               <Heart className="h-14 w-14 text-neutral-200" />
               <p className="mt-4 text-lg font-semibold text-neutral-900">
                 Aucun favori
+                {typeFilter ? ` dans cette catégorie` : ""}
               </p>
               <p className="mt-2 text-sm text-neutral-500">
                 Cliquez sur ♡ sur une carte pour sauvegarder.
@@ -116,8 +198,8 @@ export default function FavorisPage() {
                             <p className="truncate font-semibold text-neutral-900">
                               {fav.titre}
                             </p>
-                            <p className="mt-0.5 text-xs font-medium text-neutral-400 uppercase tracking-wide">
-                              {fav.objetType.toLowerCase()}
+                            <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-primary-600">
+                              {TYPE_LABELS[fav.objetType] ?? fav.objetType}
                             </p>
                             {fav.prix != null && fav.prix > 0 && (
                               <p className="mt-1 text-sm font-bold text-primary-600">

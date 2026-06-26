@@ -11,6 +11,7 @@ import { useServicesByGroupe } from "@/lib/hooks/useServices";
 import { PrestataireCard } from "@/components/prestataires/PrestataireCard";
 import { ServiceScroll } from "@/components/home/ServiceScroll";
 import { CardSkeletonGrid } from "@/components/shared/CardSkeleton";
+import { SmartEmptyState } from "@/components/shared/SmartEmptyState";
 import { AnimatedGrid, AnimatedItem } from "@/components/shared/AnimatedGrid";
 import { Pagination } from "@/components/shared/Pagination";
 import { POLE_GROUPE_NAMES } from "@/lib/utils/filters";
@@ -32,6 +33,7 @@ function PrestatairesContent() {
   const [search, setSearch] = useState(q || serviceName);
   const [villeFilter, setVilleFilter] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<"default" | "note" | "prix_asc" | "prix_desc" | "recents">("default");
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [nearbyMode, setNearbyMode] = useState(false);
@@ -77,7 +79,17 @@ function PrestatairesContent() {
     });
   }, [data, search, serviceId, serviceName, villeFilter, verifiedOnly]);
 
-  const displayList = nearbyMode && hasLocation ? nearby : filtered;
+  const sorted = useMemo(() => {
+    const list = [...filtered];
+    switch (sortBy) {
+      case "note": return list.sort((a, b) => (b.note ?? 0) - (a.note ?? 0));
+      case "prix_asc": return list.sort((a, b) => (a.prixprestataire ?? 999999) - (b.prixprestataire ?? 999999));
+      case "prix_desc": return list.sort((a, b) => (b.prixprestataire ?? 0) - (a.prixprestataire ?? 0));
+      default: return list;
+    }
+  }, [filtered, sortBy]);
+
+  const displayList = nearbyMode && hasLocation ? nearby : sorted;
   const totalPages = Math.ceil(displayList.length / PAGE_SIZE);
   const paginated = displayList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const activeFilterCount = [villeFilter, verifiedOnly].filter(Boolean).length;
@@ -196,30 +208,37 @@ function PrestatairesContent() {
           <ServiceScroll pole="metiers" isLoading={loadingServices} services={services} />
         </div>
 
-        {!isLoading && !error && filtered.length > 0 && (
-          <p className="mb-5 text-sm text-neutral-500">
-            <span className="font-semibold text-neutral-900">{filtered.length}</span>{" "}
-            prestataire{filtered.length > 1 ? "s" : ""} —{" "}
-            page {page}/{totalPages || 1}
-          </p>
+        {/* Résultats + tri */}
+        {!isLoading && !error && sorted.length > 0 && (
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-neutral-500">
+              <span className="font-semibold text-neutral-900">{sorted.length}</span>{" "}
+              prestataire{sorted.length > 1 ? "s" : ""} — page {page}/{totalPages || 1}
+            </p>
+            <select
+              value={sortBy}
+              onChange={(e) => { setSortBy(e.target.value as typeof sortBy); setPage(1); }}
+              aria-label="Trier les prestataires"
+              className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+            >
+              <option value="default">Trier par : Défaut</option>
+              <option value="note">Meilleures notes</option>
+              <option value="prix_asc">Prix croissant</option>
+              <option value="prix_desc">Prix décroissant</option>
+            </select>
+          </div>
         )}
 
         {isLoading && <CardSkeletonGrid count={PAGE_SIZE} />}
 
-        {error && (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-200 bg-white py-20 text-center">
-            <p className="text-neutral-500">
-              Impossible de charger les prestataires. Vérifiez que le backend est démarré.
-            </p>
-          </div>
-        )}
-
-        {!isLoading && !error && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-200 bg-white py-20 text-center">
-            <p className="text-lg font-semibold text-neutral-900">Aucun résultat</p>
-            <p className="mt-2 text-sm text-neutral-500">Essayez d&apos;autres critères.</p>
-          </div>
-        )}
+        <SmartEmptyState
+          isLoading={isLoading}
+          hasData={sorted.length > 0}
+          error={error}
+          emptyTitle="Aucun prestataire trouvé"
+          emptyText="Essayez d'autres critères de recherche ou réinitialisez les filtres."
+          errorText="Impossible de charger les prestataires. Vérifiez que le backend est démarré."
+        />
 
         {!isLoading && !error && paginated.length > 0 && (
           <>

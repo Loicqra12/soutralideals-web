@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -11,8 +12,8 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[GlobalError]", error);
-    // Sentry.captureException(error); // Décommenter après avoir défini NEXT_PUBLIC_SENTRY_DSN
+    console.error("[Error]", error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (

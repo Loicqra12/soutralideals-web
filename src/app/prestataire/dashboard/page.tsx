@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import {
   Briefcase,
   CheckCircle2,
   TrendingUp,
   HelpCircle,
   Wallet,
+  Eye,
+  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,12 +20,19 @@ import {
   MissionEmptyState,
 } from "@/components/prestataire/MissionRow";
 import { ProIcon, ProIconBox } from "@/components/prestataire/ProIcon";
+import { SimpleBarChart } from "@/components/shared/SimpleBarChart";
 import { usePrestataireDashboard } from "@/lib/hooks/usePrestataireDashboard";
+import { fetchPrestationsByPrestataire } from "@/lib/api/prestations";
 import {
   computeProfileStrength,
   formatFcfa,
   STATUT_LABELS,
 } from "@/lib/utils/prestataireDashboard";
+import {
+  computeMonthlyActivity,
+  computeMonthlyRevenue,
+  formatRevenueChart,
+} from "@/lib/utils/dashboardCharts";
 
 const ONBOARDING_STEPS = [
   {
@@ -56,6 +66,19 @@ export default function PrestataireDashboardPage() {
   } = usePrestataireDashboard();
 
   const strength = computeProfileStrength(profile);
+
+  const { data: chartMissions } = useQuery({
+    queryKey: ["prestataire-chart-missions", profile?._id],
+    queryFn: () => fetchPrestationsByPrestataire(profile!._id, { limit: 100 }),
+    enabled: !!profile?._id,
+    staleTime: 60_000,
+  });
+
+  const allMissions = chartMissions?.prestations ?? [];
+  const monthlyRevenue = computeMonthlyRevenue(allMissions);
+  const monthlyActivity = computeMonthlyActivity(allMissions);
+  const profileViewsEstimate =
+    (profile?.nbAvis ?? 0) * 12 + (stats?.totalPrestations ?? 0) * 8 + strength.percent * 2;
 
   const enCours =
     stats?.statsParStatut.find((s) => s._id === "EN_COURS")?.count ?? 0;
@@ -180,6 +203,35 @@ export default function PrestataireDashboardPage() {
                 ))}
               </CardContent>
             </Card>
+
+            <Card className="border-neutral-200 shadow-none">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-neutral-900">
+                  <BarChart3 className="h-4 w-4" />
+                  Revenus mensuels
+                </CardTitle>
+                <p className="text-sm text-neutral-500">6 derniers mois (missions terminées)</p>
+              </CardHeader>
+              <CardContent>
+                <SimpleBarChart
+                  data={monthlyRevenue}
+                  valueFormatter={formatRevenueChart}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="border-neutral-200 shadow-none">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-neutral-900">
+                  <TrendingUp className="h-4 w-4" />
+                  Activité mensuelle
+                </CardTitle>
+                <p className="text-sm text-neutral-500">Nombre de missions par mois</p>
+              </CardHeader>
+              <CardContent>
+                <SimpleBarChart data={monthlyActivity} barClassName="bg-blue-500/80" />
+              </CardContent>
+            </Card>
           </div>
 
           <div className="space-y-6">
@@ -190,6 +242,32 @@ export default function PrestataireDashboardPage() {
               items={strength.items}
               isVisible={strength.isVisible}
             />
+
+            <Card className="border-neutral-200 shadow-none">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-neutral-900">
+                  <Eye className="h-4 w-4" />
+                  Visibilité du profil
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold text-neutral-900">
+                  ~{profileViewsEstimate.toLocaleString("fr-FR")}
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  vues estimées (avis, missions, complétude profil)
+                </p>
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-neutral-100">
+                  <div
+                    className="h-full rounded-full bg-primary-500 transition-all"
+                    style={{ width: `${strength.percent}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-neutral-400">
+                  Profil complété à {strength.percent}%
+                </p>
+              </CardContent>
+            </Card>
 
             <Card className="border-neutral-200 shadow-none">
               <CardHeader>

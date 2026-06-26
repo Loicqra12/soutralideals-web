@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { fetchUserRolesFromApi } from "@/lib/auth/roles";
 
-const protectedRoutes = ["/profile", "/settings", "/panier", "/commandes", "/favoris", "/messages"];
+const protectedRoutes = ["/profile", "/settings", "/panier", "/commandes", "/favoris", "/messages", "/notifications"];
 const proEspaceRoutes = ["/freelance/espace", "/emarche/espace"];
 const prestataireAuthRoutes = [
   "/prestataire/registration",
@@ -86,10 +86,12 @@ export const config = {
     "/panier/:path*",
     "/commandes/:path*",
     "/favoris/:path*",
+    "/notifications/:path*",
     "/messages/:path*",
     "/freelance/espace/:path*",
     "/emarche/espace/:path*",
     "/prestataire/:path*",
+    "/freelance/profil/:path*",
     "/freelance/inscription/formulaire",
     "/emarche/inscription/formulaire",
   ],

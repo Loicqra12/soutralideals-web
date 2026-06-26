@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { AnimatePresence, motion, type Easing } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { PrestataireCard } from "@/components/prestataires/PrestataireCard";
@@ -15,10 +16,9 @@ import { POLE_GROUPE_NAMES } from "@/lib/utils/filters";
 import { usePrestataires } from "@/lib/hooks/usePrestataires";
 import { useFreelances } from "@/lib/hooks/useFreelances";
 import { useArticles } from "@/lib/hooks/useArticles";
-import {
-  POLE_LABELS,
-  type PoleType,
-} from "@/lib/utils/filters";
+import { POLE_LABELS, type PoleType } from "@/lib/utils/filters";
+import { useInView } from "@/lib/hooks/useInView";
+import { useState } from "react";
 
 const POLES: PoleType[] = ["metiers", "freelance", "emarche"];
 
@@ -26,6 +26,24 @@ const LISTING_LABELS: Record<PoleType, string> = {
   metiers: "Prestataires populaires",
   freelance: "Freelances populaires",
   emarche: "Produits populaires",
+};
+
+const easeOut: Easing = "easeOut";
+
+const panelVariants = {
+  initial: { opacity: 0, y: 16, scale: 0.99 },
+  animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.3, ease: easeOut } },
+  exit: { opacity: 0, y: -8, scale: 0.99, transition: { duration: 0.18 } },
+};
+
+const gridVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
+
+const cardVariant = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: easeOut } },
 };
 
 function ListingsGrid({
@@ -41,10 +59,7 @@ function ListingsGrid({
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-56 animate-pulse rounded-xl bg-neutral-100"
-          />
+          <div key={i} className="h-56 animate-pulse rounded-2xl bg-neutral-100" />
         ))}
       </div>
     );
@@ -55,7 +70,14 @@ function ListingsGrid({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{children}</div>
+    <motion.div
+      variants={gridVariants}
+      initial="hidden"
+      animate="visible"
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -72,29 +94,24 @@ function MetiersPanel() {
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
           Services
         </h3>
-        <ServiceScroll
-          pole="metiers"
-          isLoading={loadingServices}
-          services={services}
-        />
+        <ServiceScroll pole="metiers" isLoading={loadingServices} services={services} />
       </div>
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-neutral-900">
-            {LISTING_LABELS.metiers}
-          </h3>
+          <h3 className="text-lg font-bold text-neutral-900">{LISTING_LABELS.metiers}</h3>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/prestataires">
               Voir tout <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           </Button>
         </div>
-        <ListingsGrid
-          isLoading={loadingListings}
-          emptyMessage="Aucun prestataire pour le moment."
-        >
+        <ListingsGrid isLoading={loadingListings} emptyMessage="Aucun prestataire pour le moment.">
           {items.length > 0 &&
-            items.map((p) => <PrestataireCard key={p._id} prestataire={p} />)}
+            items.map((p) => (
+              <motion.div key={p._id} variants={cardVariant}>
+                <PrestataireCard prestataire={p} />
+              </motion.div>
+            ))}
         </ListingsGrid>
       </div>
     </div>
@@ -114,29 +131,24 @@ function FreelancePanel() {
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
           Services
         </h3>
-        <ServiceScroll
-          pole="freelance"
-          isLoading={loadingServices}
-          services={services}
-        />
+        <ServiceScroll pole="freelance" isLoading={loadingServices} services={services} />
       </div>
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-neutral-900">
-            {LISTING_LABELS.freelance}
-          </h3>
+          <h3 className="text-lg font-bold text-neutral-900">{LISTING_LABELS.freelance}</h3>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/freelance">
               Voir tout <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           </Button>
         </div>
-        <ListingsGrid
-          isLoading={loadingListings}
-          emptyMessage="Aucun freelance pour le moment."
-        >
+        <ListingsGrid isLoading={loadingListings} emptyMessage="Aucun freelance pour le moment.">
           {items.length > 0 &&
-            items.map((f) => <FreelanceCard key={f._id} freelance={f} />)}
+            items.map((f) => (
+              <motion.div key={f._id} variants={cardVariant}>
+                <FreelanceCard freelance={f} />
+              </motion.div>
+            ))}
         </ListingsGrid>
       </div>
     </div>
@@ -144,8 +156,7 @@ function FreelancePanel() {
 }
 
 function EmarchePanel() {
-  const { data: categories, isLoading: loadingCategories } =
-    useCategoriesByPole("emarche");
+  const { data: categories, isLoading: loadingCategories } = useCategoriesByPole("emarche");
   const { data: articles, isLoading: loadingListings } = useArticles();
   const items = articles?.slice(0, 4) ?? [];
 
@@ -155,33 +166,23 @@ function EmarchePanel() {
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
           Catégories
         </h3>
-        <CategoryScroll
-          pole="emarche"
-          isLoading={loadingCategories}
-          categories={categories}
-        />
+        <CategoryScroll pole="emarche" isLoading={loadingCategories} categories={categories} />
       </div>
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-neutral-900">
-            {LISTING_LABELS.emarche}
-          </h3>
+          <h3 className="text-lg font-bold text-neutral-900">{LISTING_LABELS.emarche}</h3>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/emarche">
               Voir tout <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           </Button>
         </div>
-        <ListingsGrid
-          isLoading={loadingListings}
-          emptyMessage="Aucun produit pour le moment."
-        >
+        <ListingsGrid isLoading={loadingListings} emptyMessage="Aucun produit pour le moment.">
           {items.length > 0 &&
             items.map((a) => (
-              <ArticleCard
-                key={a._id ?? a.nomArticle}
-                article={a}
-              />
+              <motion.div key={a._id ?? a.nomArticle} variants={cardVariant}>
+                <ArticleCard article={a} />
+              </motion.div>
             ))}
         </ListingsGrid>
       </div>
@@ -196,12 +197,21 @@ const PANELS: Record<PoleType, React.ReactNode> = {
 };
 
 export function ExploreSection() {
+  const [activeTab, setActiveTab] = useState<PoleType>("metiers");
+  const { ref, inView } = useInView({ threshold: 0.05 });
+
   return (
     <section
+      ref={ref}
       className="mx-auto max-w-7xl px-4 py-14 lg:px-8"
       aria-labelledby="explore-heading"
     >
-      <div className="mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.5 }}
+        className="mb-8"
+      >
         <h2
           id="explore-heading"
           className="text-2xl font-bold text-neutral-900 sm:text-3xl"
@@ -212,9 +222,9 @@ export function ExploreSection() {
           Parcourez les services et catégories, puis découvrez les profils et
           produits les plus demandés en Côte d&apos;Ivoire.
         </p>
-      </div>
+      </motion.div>
 
-      <Tabs defaultValue="metiers">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as PoleType)}>
         <TabsList className="mb-6 h-auto w-full justify-start gap-1 overflow-x-auto rounded-2xl p-1.5 sm:w-auto">
           {POLES.map((pole) => (
             <TabsTrigger
@@ -227,11 +237,18 @@ export function ExploreSection() {
           ))}
         </TabsList>
 
-        {POLES.map((pole) => (
-          <TabsContent key={pole} value={pole} className="mt-0">
-            {PANELS[pole]}
-          </TabsContent>
-        ))}
+        {/* AnimatePresence pour transition fluide entre onglets */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            variants={panelVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            {PANELS[activeTab]}
+          </motion.div>
+        </AnimatePresence>
       </Tabs>
     </section>
   );

@@ -9,6 +9,7 @@ import { useServicesByGroupe } from "@/lib/hooks/useServices";
 import { FreelanceCard } from "@/components/freelance/FreelanceCard";
 import { ServiceScroll } from "@/components/home/ServiceScroll";
 import { CardSkeletonGrid } from "@/components/shared/CardSkeleton";
+import { SmartEmptyState } from "@/components/shared/SmartEmptyState";
 import { AnimatedGrid, AnimatedItem } from "@/components/shared/AnimatedGrid";
 import { Pagination } from "@/components/shared/Pagination";
 import { POLE_GROUPE_NAMES } from "@/lib/utils/filters";
@@ -58,6 +59,7 @@ function FreelanceContent() {
   const [search, setSearch] = useState(q || serviceName);
   const [niveauFilter, setNiveauFilter] = useState("");
   const [dispFilter, setDispFilter] = useState("");
+  const [sortBy, setSortBy] = useState<"default" | "note" | "tarif_asc" | "tarif_desc">("default");
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -81,8 +83,18 @@ function FreelanceContent() {
     });
   }, [data, search, serviceId, serviceName, niveauFilter, dispFilter]);
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const sorted = useMemo(() => {
+    const list = [...filtered];
+    switch (sortBy) {
+      case "note": return list.sort((a, b) => (b.rating ?? b.note ?? 0) - (a.rating ?? a.note ?? 0));
+      case "tarif_asc": return list.sort((a, b) => (a.hourlyRate ?? a.tarif ?? 999999) - (b.hourlyRate ?? b.tarif ?? 999999));
+      case "tarif_desc": return list.sort((a, b) => (b.hourlyRate ?? b.tarif ?? 0) - (a.hourlyRate ?? a.tarif ?? 0));
+      default: return list;
+    }
+  }, [filtered, sortBy]);
+
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const activeFilterCount = [niveauFilter, dispFilter].filter(Boolean).length;
 
   return (
@@ -184,27 +196,36 @@ function FreelanceContent() {
           <ServiceScroll pole="freelance" isLoading={loadingServices} services={services} />
         </div>
 
-        {!isLoading && !error && filtered.length > 0 && (
-          <p className="mb-5 text-sm text-neutral-500">
-            <span className="font-semibold text-neutral-900">{filtered.length}</span>{" "}
-            freelance{filtered.length > 1 ? "s" : ""} — page {page}/{totalPages || 1}
-          </p>
+        {!isLoading && !error && sorted.length > 0 && (
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-neutral-500">
+              <span className="font-semibold text-neutral-900">{sorted.length}</span>{" "}
+              freelance{sorted.length > 1 ? "s" : ""} — page {page}/{totalPages || 1}
+            </p>
+            <select
+              value={sortBy}
+              onChange={(e) => { setSortBy(e.target.value as typeof sortBy); setPage(1); }}
+              aria-label="Trier les freelances"
+              className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="default">Trier par : Défaut</option>
+              <option value="note">Meilleures notes</option>
+              <option value="tarif_asc">Tarif croissant</option>
+              <option value="tarif_desc">Tarif décroissant</option>
+            </select>
+          </div>
         )}
 
         {isLoading && <CardSkeletonGrid count={PAGE_SIZE} />}
 
-        {error && (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-200 bg-white py-20 text-center">
-            <p className="text-neutral-500">Impossible de charger les freelances.</p>
-          </div>
-        )}
-
-        {!isLoading && !error && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-200 bg-white py-20 text-center">
-            <p className="text-lg font-semibold text-neutral-900">Aucun résultat</p>
-            <p className="mt-2 text-sm text-neutral-500">Essayez d&apos;autres critères.</p>
-          </div>
-        )}
+        <SmartEmptyState
+          isLoading={isLoading}
+          hasData={sorted.length > 0}
+          error={error}
+          emptyTitle="Aucun freelance trouvé"
+          emptyText="Essayez d'autres critères ou retirez les filtres actifs."
+          errorText="Impossible de charger les freelances. Vérifiez que le backend est démarré."
+        />
 
         {!isLoading && !error && paginated.length > 0 && (
           <>

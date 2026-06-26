@@ -1,17 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import {
   Briefcase,
   Clock,
   ExternalLink,
   Star,
   Wallet,
+  BarChart3,
+  Eye,
+  TrendingUp,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProIcon, ProIconBox } from "@/components/prestataire/ProIcon";
+import { SimpleBarChart } from "@/components/shared/SimpleBarChart";
 import { useMyFreelance } from "@/lib/hooks/useMyFreelance";
 import { useAuthStore } from "@/stores";
 import { formatPriceFCFA } from "@/lib/utils/format";
@@ -20,6 +25,7 @@ import {
   getServiceLabel,
   getUtilisateurDisplayName,
 } from "@/lib/utils/listingDisplay";
+import { getLast6MonthLabels, formatRevenueChart } from "@/lib/utils/dashboardCharts";
 
 export default function FreelanceEspacePage() {
   const utilisateur = useAuthStore((s) => s.utilisateur);
@@ -61,6 +67,28 @@ export default function FreelanceEspacePage() {
     getCategoryLabel(profile.categorie, profile.service);
   const tarif = profile.hourlyRate ?? profile.tarif ?? 0;
   const note = profile.rating ?? profile.note;
+  const completedJobs = profile.completedJobs ?? 0;
+
+  const profileCompleteness = useMemo(() => {
+    let score = 0;
+    if (profile.description) score += 25;
+    if (profile.skills?.length) score += 25;
+    if (profile.imagePath || profile.photoProfil) score += 25;
+    if (tarif > 0) score += 25;
+    return score;
+  }, [profile, tarif]);
+
+  const estimatedRevenue = completedJobs * tarif;
+  const monthlyRevenueChart = useMemo(() => {
+    const labels = getLast6MonthLabels();
+    return labels.map((label, i) => ({
+      label,
+      value: i === labels.length - 1 && completedJobs > 0 ? estimatedRevenue : 0,
+    }));
+  }, [completedJobs, estimatedRevenue]);
+
+  const profileViewsEstimate =
+    completedJobs * 15 + Math.round((note ?? 0) * 20) + profileCompleteness * 3;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 lg:px-8 lg:py-8">
@@ -125,8 +153,56 @@ export default function FreelanceEspacePage() {
             <div>
               <p className="text-xs text-neutral-500">Missions réalisées</p>
               <p className="text-lg font-semibold text-neutral-900">
-                {profile.completedJobs ?? 0}
+                {completedJobs}
               </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mb-8 grid gap-6 lg:grid-cols-2">
+        <Card className="border-neutral-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BarChart3 className="h-4 w-4" />
+              Revenus estimés
+            </CardTitle>
+            <p className="text-sm text-neutral-500">
+              Basé sur {completedJobs} mission{completedJobs > 1 ? "s" : ""} × tarif horaire
+            </p>
+          </CardHeader>
+          <CardContent>
+            <SimpleBarChart
+              data={monthlyRevenueChart}
+              valueFormatter={formatRevenueChart}
+            />
+          </CardContent>
+        </Card>
+
+        <Card className="border-neutral-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Eye className="h-4 w-4" />
+              Visibilité du profil
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-neutral-900">
+              ~{profileViewsEstimate.toLocaleString("fr-FR")}
+            </p>
+            <p className="mt-1 text-sm text-neutral-500">vues estimées</p>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-neutral-100">
+              <div
+                className="h-full rounded-full bg-blue-500 transition-all"
+                style={{ width: `${profileCompleteness}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-neutral-400">
+              Profil complété à {profileCompleteness}%
+            </p>
+            <div className="mt-4 flex items-center gap-2 text-sm text-neutral-600">
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
+              {formatPriceFCFA(estimatedRevenue)} de revenus estimés au total
             </div>
           </CardContent>
         </Card>

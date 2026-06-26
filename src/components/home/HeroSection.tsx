@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { GlobalSearch } from "@/components/home/GlobalSearch";
 import { cn } from "@/lib/utils";
@@ -211,7 +212,8 @@ export function HeroSection() {
           </div>
         </div>
 
-        <div className="absolute bottom-6 left-5 flex items-center gap-2 sm:bottom-8 sm:left-6 lg:left-8">
+        {/* Dots navigation */}
+        <div className="absolute bottom-8 left-5 flex items-center gap-2 sm:left-6 lg:left-8">
           {SLIDES.map((_, index) => (
             <button
               key={index}
@@ -227,6 +229,17 @@ export function HeroSection() {
             />
           ))}
         </div>
+
+        {/* Chevron scroll-down */}
+        <a
+          href="#explore"
+          aria-label="Défiler vers le bas"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        >
+          <ChevronDown
+            className="h-8 w-8 animate-bounce text-white/70 hover:text-white transition-colors"
+          />
+        </a>
       </div>
     </section>
   );

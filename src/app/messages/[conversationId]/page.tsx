@@ -1,18 +1,23 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Send } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, ImagePlus, Loader2, Send, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   useConversationMessages,
   useSendMessage,
   useMarkRead,
 } from "@/lib/hooks/useMessages";
+import { useRealtimeConversation } from "@/lib/hooks/useSocket";
 import { useAuthStore } from "@/stores";
 import { Button } from "@/components/ui/button";
+import { EmojiPicker } from "@/components/messages/EmojiPicker";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { resolveMediaUrl } from "@/lib/utils/mediaUrl";
+import type { Message } from "@/lib/api/messages";
 
 function formatTime(dateStr?: string): string {
   if (!dateStr) return "";
@@ -20,6 +25,69 @@ function formatTime(dateStr?: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function MessageBubble({
+  msg,
+  isMe,
+}: {
+  msg: Message;
+  isMe: boolean;
+}) {
+  const imageUrl =
+    msg.pieceJointe && msg.typePieceJointe === "IMAGE"
+      ? resolveMediaUrl(msg.pieceJointe)
+      : null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.15 }}
+      className={cn("flex", isMe ? "justify-end" : "justify-start")}
+    >
+      <div
+        className={cn(
+          "max-w-[75%] overflow-hidden rounded-2xl text-sm",
+          isMe
+            ? "rounded-tr-sm bg-primary-600 text-white"
+            : "rounded-tl-sm bg-white text-neutral-900 shadow-sm",
+          imageUrl ? "p-1" : "px-4 py-2.5",
+        )}
+      >
+        {imageUrl && (
+          <a href={imageUrl} target="_blank" rel="noopener noreferrer">
+            <div className="relative aspect-[4/3] w-48 max-w-full overflow-hidden rounded-xl sm:w-56">
+              <Image
+                src={imageUrl}
+                alt="Pièce jointe"
+                fill
+                sizes="224px"
+                className="object-cover"
+              />
+            </div>
+          </a>
+        )}
+        {msg.contenu && msg.contenu !== "📷 Photo" && (
+          <p className={cn("leading-relaxed", imageUrl && "px-3 py-2")}>
+            {msg.contenu}
+          </p>
+        )}
+        <p
+          className={cn(
+            "text-right text-[10px]",
+            imageUrl ? "px-3 pb-2" : "",
+            isMe ? "text-white/60" : "text-neutral-400",
+          )}
+        >
+          {formatTime(msg.createdAt)}
+          {isMe && (
+            <span className="ml-1">{msg.statut === "LU" ? "✓✓" : "✓"}</span>
+          )}
+        </p>
+      </div>
+    </motion.div>
+  );
 }
 
 export default function ConversationPage({
@@ -30,61 +98,53 @@ export default function ConversationPage({
   const { conversationId } = use(params);
   const utilisateur = useAuthStore((s) => s.utilisateur);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [inputText, setInputText] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
+  const [realtimeMessages, setRealtimeMessages] = useState<Message[]>([]);
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const { data: messages = [], isLoading } = useConversationMessages(conversationId);
-  const { mutateAsync: send, isPending: sending } = useSendMessage(conversationId);
+  const { data: historicMessages = [], isLoading } =
+    useConversationMessages(conversationId);
+  const { mutateAsync: sendHttp, isPending: sending } =
+    useSendMessage(conversationId);
   const { mutate: markRead } = useMarkRead(conversationId);
 
-  // Scroll en bas à chaque nouveau message
+  const handleNewMessage = useCallback((msg: Message) => {
+    setRealtimeMessages((prev) => {
+      if (prev.some((m) => m._id === msg._id)) return prev;
+      return [...prev, msg];
+    });
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  const { partnerTyping, emitTypingStart, emitTypingStop, sendViaSocket } =
+    useRealtimeConversation(conversationId, handleNewMessage);
+
+  const allMessages = [
+    ...historicMessages,
+    ...realtimeMessages.filter(
+      (rm) => !historicMessages.some((hm) => hm._id === rm._id),
+    ),
+  ];
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+  }, [allMessages.length]);
 
-  // Marquer comme lu à l'ouverture
   useEffect(() => {
     if (utilisateur?._id) markRead();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, utilisateur?._id]);
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = inputText.trim();
-    if (!text || !utilisateur) return;
+  useEffect(() => {
+    return () => {
+      if (attachmentPreview) URL.revokeObjectURL(attachmentPreview);
+    };
+  }, [attachmentPreview]);
 
-    // Trouver le destinataire (l'autre personne)
-    const otherMsg = messages.find(
-      (m) =>
-        (typeof m.expediteur === "object" ? m.expediteur._id : m.expediteur) !==
-        utilisateur._id,
-    );
-    const destinataireId =
-      typeof otherMsg?.expediteur === "object"
-        ? otherMsg.expediteur._id
-        : otherMsg?.destinataire
-          ? typeof otherMsg.destinataire === "object"
-            ? otherMsg.destinataire._id
-            : otherMsg.destinataire
-          : "";
-
-    if (!destinataireId) {
-      toast.error("Destinataire introuvable.");
-      return;
-    }
-
-    setInputText("");
-    try {
-      await send({
-        expediteur: utilisateur._id,
-        destinataire: destinataireId,
-        contenu: text,
-      });
-    } catch {
-      toast.error("Message non envoyé. Réessayez.");
-      setInputText(text);
-    }
-  };
-
-  const otherUser = messages.find((m) => {
+  const otherUser = allMessages.find((m) => {
     const expId =
       typeof m.expediteur === "object" ? m.expediteur._id : m.expediteur;
     return expId !== utilisateur?._id;
@@ -96,9 +156,99 @@ export default function ConversationPage({
         "Conversation"
       : "Conversation";
 
+  const getDestinataireId = (): string => {
+    const other = allMessages.find((m) => {
+      const expId =
+        typeof m.expediteur === "object" ? m.expediteur._id : m.expediteur;
+      return expId !== utilisateur?._id;
+    });
+    if (!other) return "";
+    const exp = other.expediteur;
+    return typeof exp === "object" ? (exp._id ?? "") : (exp ?? "");
+  };
+
+  const clearAttachment = () => {
+    if (attachmentPreview) URL.revokeObjectURL(attachmentPreview);
+    setAttachment(null);
+    setAttachmentPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Seules les images sont acceptées pour le moment.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image trop volumineuse (max 5 Mo).");
+      return;
+    }
+    if (attachmentPreview) URL.revokeObjectURL(attachmentPreview);
+    setAttachment(file);
+    setAttachmentPreview(URL.createObjectURL(file));
+  };
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = inputText.trim();
+    if ((!text && !attachment) || !utilisateur) return;
+
+    const destinataireId = getDestinataireId();
+    if (!destinataireId) {
+      toast.error("Destinataire introuvable.");
+      return;
+    }
+
+    const savedText = text;
+    const savedFile = attachment;
+    setInputText("");
+    clearAttachment();
+    emitTypingStop();
+
+    const payload = {
+      expediteur: utilisateur._id,
+      destinataire: destinataireId,
+      contenu: savedText || "📷 Photo",
+      conversationId,
+    };
+
+    sendViaSocket(payload);
+    try {
+      if (savedFile) {
+        const { sendMessageWithAttachment } = await import("@/lib/api/messages");
+        await sendMessageWithAttachment({
+          expediteur: utilisateur._id,
+          destinataire: destinataireId,
+          contenu: savedText,
+          file: savedFile,
+        });
+      } else {
+        await sendHttp(payload);
+      }
+    } catch {
+      toast.error("Message non envoyé. Réessayez.");
+      setInputText(savedText);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputText(e.target.value);
+    e.target.style.height = "auto";
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+
+    emitTypingStart();
+    clearTimeout(typingTimer.current);
+    typingTimer.current = setTimeout(emitTypingStop, 2000);
+  };
+
+  const insertEmoji = (emoji: string) => {
+    setInputText((prev) => prev + emoji);
+  };
+
   return (
-    <div className="flex h-[calc(100dvh-4rem)] flex-col bg-neutral-50 md:h-[calc(100dvh-4rem)]">
-      {/* Header */}
+    <div className="flex h-[calc(100dvh-4rem)] flex-col bg-neutral-50">
       <div className="flex items-center gap-3 border-b border-neutral-200 bg-white px-4 py-3">
         <Button variant="ghost" size="sm" asChild className="-ml-2 shrink-0">
           <Link href="/messages">
@@ -110,17 +260,22 @@ export default function ConversationPage({
         </div>
         <div>
           <p className="text-sm font-semibold text-neutral-900">{otherName}</p>
-          <p className="text-xs text-neutral-400">En ligne</p>
+          {partnerTyping ? (
+            <p className="text-xs text-primary-500 animate-pulse">
+              En train d&apos;écrire…
+            </p>
+          ) : (
+            <p className="text-xs text-neutral-400">En ligne</p>
+          )}
         </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {isLoading ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
           </div>
-        ) : messages.length === 0 ? (
+        ) : allMessages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <p className="text-sm text-neutral-500">
               Démarrez la conversation en envoyant un message.
@@ -129,49 +284,13 @@ export default function ConversationPage({
         ) : (
           <div className="space-y-2">
             <AnimatePresence initial={false}>
-              {messages.map((msg) => {
+              {allMessages.map((msg) => {
                 const expId =
                   typeof msg.expediteur === "object"
                     ? msg.expediteur._id
                     : msg.expediteur;
                 const isMe = expId === utilisateur?._id;
-
-                return (
-                  <motion.div
-                    key={msg._id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className={cn(
-                      "flex",
-                      isMe ? "justify-end" : "justify-start",
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm",
-                        isMe
-                          ? "rounded-tr-sm bg-primary-600 text-white"
-                          : "rounded-tl-sm bg-white text-neutral-900 shadow-sm",
-                      )}
-                    >
-                      <p className="leading-relaxed">{msg.contenu}</p>
-                      <p
-                        className={cn(
-                          "mt-1 text-right text-[10px]",
-                          isMe ? "text-white/60" : "text-neutral-400",
-                        )}
-                      >
-                        {formatTime(msg.createdAt)}
-                        {isMe && (
-                          <span className="ml-1">
-                            {msg.statut === "LU" ? "✓✓" : "✓"}
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </motion.div>
-                );
+                return <MessageBubble key={msg._id} msg={msg} isMe={isMe} />;
               })}
             </AnimatePresence>
             <div ref={bottomRef} />
@@ -179,18 +298,55 @@ export default function ConversationPage({
         )}
       </div>
 
-      {/* Input */}
+      {attachmentPreview && (
+        <div className="border-t border-neutral-200 bg-neutral-50 px-4 py-2">
+          <div className="relative inline-block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={attachmentPreview}
+              alt="Aperçu"
+              className="h-20 w-20 rounded-xl object-cover"
+            />
+            <button
+              type="button"
+              onClick={clearAttachment}
+              className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-neutral-900 text-white"
+              aria-label="Supprimer la pièce jointe"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <form
         onSubmit={handleSend}
-        className="flex items-end gap-2 border-t border-neutral-200 bg-white px-4 py-3"
+        className="flex items-end gap-1 border-t border-neutral-200 bg-white px-3 py-3 sm:gap-2 sm:px-4"
       >
+        <EmojiPicker onSelect={insertEmoji} />
+        <label htmlFor="message-attachment" className="sr-only">
+          Joindre une image
+        </label>
+        <input
+          id="message-attachment"
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileSelect}
+          aria-label="Joindre une image"
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+          aria-label="Joindre une image"
+        >
+          <ImagePlus className="h-5 w-5" />
+        </button>
         <textarea
           value={inputText}
-          onChange={(e) => {
-            setInputText(e.target.value);
-            e.target.style.height = "auto";
-            e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-          }}
+          onChange={handleInputChange}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
@@ -204,7 +360,7 @@ export default function ConversationPage({
         <Button
           type="submit"
           size="sm"
-          disabled={!inputText.trim() || sending}
+          disabled={(!inputText.trim() && !attachment) || sending}
           className="h-10 w-10 shrink-0 rounded-xl p-0"
         >
           {sending ? (

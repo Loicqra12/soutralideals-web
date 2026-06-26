@@ -89,6 +89,26 @@ export async function createFreelance(
   return postMultipart<Freelance>("freelance", formData);
 }
 
+export interface UpdateFreelancePayload {
+  name?: string;
+  job?: string;
+  description?: string;
+  hourlyRate?: number;
+  location?: string;
+  availabilityStatus?: string;
+  experienceLevel?: string;
+  workingHours?: string;
+  skills?: string[];
+}
+
+export async function updateFreelance(
+  id: string,
+  payload: UpdateFreelancePayload,
+): Promise<Freelance> {
+  const { data } = await apiClient.put<Freelance>(`/freelance/${id}`, payload);
+  return data;
+}
+
 export async function fetchFreelancesByCategory(
   category: string,
 ): Promise<Freelance[]> {

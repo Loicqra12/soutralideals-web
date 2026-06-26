@@ -14,41 +14,13 @@ import {
   resolveProHref,
 } from "@/lib/utils/proCta";
 
-const MARKETING_URL =
-  process.env.NEXT_PUBLIC_MARKETING_URL?.trim() || "https://www.soutralideals.com";
+import { FOOTER_SOCIAL_ITEMS, MARKETING_SITE_URL } from "@/lib/constants/social";
 
 const columnTitle =
   "text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-400/70";
 
-const iconBtnClass =
-  "flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/55 transition hover:border-blue-400/40 hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50";
-
-const SOCIAL_LINKS = [
-  {
-    href: "https://www.facebook.com/p/SoutraliDeals-61556925353967/",
-    icon: "Facebook" as const,
-    label: "Facebook",
-    hover: "hover:border-blue-400/40 hover:text-blue-400",
-  },
-  {
-    href: "https://x.com/SoutraliDeals",
-    icon: "Twitter" as const,
-    label: "X (Twitter)",
-    hover: "hover:border-white/30 hover:text-white",
-  },
-  {
-    href: "https://www.instagram.com/soutrali_deals/",
-    icon: "Instagram" as const,
-    label: "Instagram",
-    hover: "hover:border-amber-400/50 hover:text-amber-400",
-  },
-  {
-    href: "https://ci.linkedin.com/company/soutrali-deals",
-    icon: "Linkedin" as const,
-    label: "LinkedIn",
-    hover: "hover:border-blue-400/50 hover:text-blue-400",
-  },
-];
+const SOCIAL_ICON_BTN =
+  "flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/55 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50";
 
 function FooterLink({
   href,
@@ -134,7 +106,7 @@ export function Footer() {
               produits locaux — tout au même endroit en Côte d&apos;Ivoire.
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              {SOCIAL_LINKS.map(({ href, icon, label, hover }) => {
+              {FOOTER_SOCIAL_ITEMS.map(({ href, icon, label, hover }) => {
                 const Icon = SOCIAL_ICONS[icon];
                 return (
                   <a
@@ -142,7 +114,7 @@ export function Footer() {
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={cn(iconBtnClass, hover)}
+                    className={cn(SOCIAL_ICON_BTN, hover)}
                     aria-label={`${label} (nouvel onglet)`}
                   >
                     <Icon className="h-4 w-4" />
@@ -224,8 +196,13 @@ export function Footer() {
                     <FooterLink href="/apropos">À propos</FooterLink>
                   </li>
                   <li>
-                    <FooterLink href={`${MARKETING_URL}/contact`} external>
+                    <FooterLink href={`${MARKETING_SITE_URL}/contact`} external>
                       Contact
+                    </FooterLink>
+                  </li>
+                  <li>
+                    <FooterLink href={MARKETING_SITE_URL} external>
+                      Site de présentation
                     </FooterLink>
                   </li>
                   <li>

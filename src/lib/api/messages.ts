@@ -1,4 +1,5 @@
 import apiClient from "./client";
+import { postMultipart } from "./multipart";
 
 export interface MessageUser {
   _id: string;
@@ -55,6 +56,22 @@ export async function sendMessage(payload: {
 }): Promise<Message> {
   const { data } = await apiClient.post<Message>("/message", payload);
   return data;
+}
+
+export async function sendMessageWithAttachment(payload: {
+  expediteur: string;
+  destinataire: string;
+  contenu: string;
+  file: File;
+  typeMessage?: string;
+}): Promise<Message> {
+  const formData = new FormData();
+  formData.append("expediteur", payload.expediteur);
+  formData.append("destinataire", payload.destinataire);
+  formData.append("contenu", payload.contenu || "📷 Photo");
+  formData.append("pieceJointe", payload.file);
+  if (payload.typeMessage) formData.append("typeMessage", payload.typeMessage);
+  return postMultipart<Message>("message", formData);
 }
 
 export async function markConversationRead(

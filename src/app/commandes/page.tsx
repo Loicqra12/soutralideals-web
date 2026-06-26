@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Package, ArrowLeft, ChevronRight } from "lucide-react";
+import { Package, ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { fetchMyCommandes } from "@/lib/api/commandes";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { formatPriceFCFA } from "@/lib/utils/format";
 import { AnimatedGrid, AnimatedItem } from "@/components/shared/AnimatedGrid";
+import { DeliveryTimeline } from "@/components/shared/DeliveryTimeline";
 
 const STATUS_STYLES: Record<string, string> = {
   "En cours": "bg-amber-50 text-amber-700 border-amber-200",
@@ -39,6 +39,7 @@ function formatDate(d?: string) {
 export default function CommandesPage() {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const LIMIT = 10;
 
   const { data, isLoading, error } = useQuery({
@@ -64,7 +65,6 @@ export default function CommandesPage() {
           {total} commande{total > 1 ? "s" : ""}
         </p>
 
-        {/* Status filters */}
         <div className="mt-5 flex flex-wrap gap-2">
           {FILTERS.map((f) => (
             <button
@@ -111,60 +111,101 @@ export default function CommandesPage() {
 
           {!isLoading && !error && commandes.length > 0 && (
             <AnimatedGrid className="space-y-3">
-              {commandes.map((cmd) => (
-                <AnimatedItem key={cmd._id}>
-                  <div className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-shadow hover:shadow-md">
-                    <div className="flex items-center justify-between gap-4 px-5 py-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <span
-                            className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
-                              STATUS_STYLES[cmd.statusCommande] ??
-                              "bg-neutral-100 text-neutral-600"
-                            }`}
-                          >
-                            {cmd.statusCommande}
-                          </span>
-                          <span className="text-xs text-neutral-400">
-                            {formatDate(cmd.dateCreation ?? cmd.createdAt)}
-                          </span>
-                        </div>
-                        <p className="mt-1.5 text-sm text-neutral-600">
-                          {cmd.articles.length} article{cmd.articles.length > 1 ? "s" : ""}{" "}
-                          —{" "}
-                          {cmd.articles
-                            .slice(0, 2)
-                            .map((a) => a.nom)
-                            .join(", ")}
-                          {cmd.articles.length > 2 && (
-                            <span className="text-neutral-400">
-                              {" "}+{cmd.articles.length - 2} autre{cmd.articles.length - 2 > 1 ? "s" : ""}
+              {commandes.map((cmd) => {
+                const isExpanded = expandedId === cmd._id;
+                return (
+                  <AnimatedItem key={cmd._id}>
+                    <div className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-shadow hover:shadow-md">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedId(isExpanded ? null : cmd._id)
+                        }
+                        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span
+                              className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                                STATUS_STYLES[cmd.statusCommande] ??
+                                "bg-neutral-100 text-neutral-600"
+                              }`}
+                            >
+                              {cmd.statusCommande}
                             </span>
-                          )}
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-neutral-900">
-                          {formatPriceFCFA(cmd.prixTotal)}
-                        </p>
-                      </div>
-                      <ChevronRight className="h-5 w-5 shrink-0 text-neutral-300" />
-                    </div>
+                            <span className="text-xs text-neutral-400">
+                              {formatDate(cmd.dateCreation ?? cmd.createdAt)}
+                            </span>
+                          </div>
+                          <p className="mt-1.5 text-sm text-neutral-600">
+                            {cmd.articles.length} article{cmd.articles.length > 1 ? "s" : ""}{" "}
+                            —{" "}
+                            {cmd.articles
+                              .slice(0, 2)
+                              .map((a) => a.nom)
+                              .join(", ")}
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-neutral-900">
+                            {formatPriceFCFA(cmd.prixTotal)}
+                          </p>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp className="h-5 w-5 shrink-0 text-neutral-400" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 shrink-0 text-neutral-400" />
+                        )}
+                      </button>
 
-                    {/* Delivery address */}
-                    {cmd.infoCommande?.ville && (
-                      <div className="border-t border-neutral-50 px-5 py-2.5 text-xs text-neutral-400">
-                        Livraison → {cmd.infoCommande.ville}
-                        {cmd.infoCommande.addresse
-                          ? `, ${cmd.infoCommande.addresse}`
-                          : ""}
-                      </div>
-                    )}
-                  </div>
-                </AnimatedItem>
-              ))}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="overflow-hidden border-t border-neutral-100"
+                          >
+                            <div className="px-5 pb-5">
+                              <p className="mb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                                Suivi de livraison
+                              </p>
+                              <DeliveryTimeline status={cmd.statusCommande} />
+
+                              {cmd.infoCommande?.ville && (
+                                <p className="mt-2 text-xs text-neutral-500">
+                                  Livraison → {cmd.infoCommande.ville}
+                                  {cmd.infoCommande.addresse
+                                    ? `, ${cmd.infoCommande.addresse}`
+                                    : ""}
+                                </p>
+                              )}
+
+                              <div className="mt-4 space-y-2">
+                                {cmd.articles.map((a, i) => (
+                                  <div
+                                    key={i}
+                                    className="flex items-center justify-between text-sm"
+                                  >
+                                    <span className="text-neutral-700">
+                                      {a.nom} × {a.quantite}
+                                    </span>
+                                    <span className="font-medium text-neutral-900">
+                                      {formatPriceFCFA(a.prix * a.quantite)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </AnimatedItem>
+                );
+              })}
             </AnimatedGrid>
           )}
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="mt-8 flex items-center justify-center gap-2">
               <Button

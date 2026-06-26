@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { Bell, BellDot, CheckCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,7 +33,8 @@ function timeAgo(dateStr?: string): string {
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { data: notifications = [] } = useNotifications();
+  const { data } = useNotifications();
+  const notifications = data?.notifications ?? [];
   const { data: unreadCount = 0 } = useUnreadCount();
   const { mutate: markAll } = useMarkAllRead();
   const { mutate: markOne } = useMarkRead();
@@ -139,6 +141,19 @@ export function NotificationBell() {
                   ))
                 )}
               </div>
+
+              {/* Footer */}
+              {notifications.length > 0 && (
+                <div className="border-t border-neutral-100 px-4 py-2.5">
+                  <Link
+                    href="/notifications"
+                    onClick={() => setOpen(false)}
+                    className="block text-center text-xs font-medium text-primary-600 hover:text-primary-700"
+                  >
+                    Voir tout l&apos;historique
+                  </Link>
+                </div>
+              )}
             </motion.div>
           </>
         )}

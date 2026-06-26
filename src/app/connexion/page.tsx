@@ -3,9 +3,10 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 import { useAuthStore } from "@/stores";
 
 function ConnexionForm() {
@@ -32,61 +33,84 @@ function ConnexionForm() {
   };
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-md items-center px-4 py-12">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-2xl">Connexion</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium">Email ou téléphone</label>
-              <Input
-                value={identifiant}
-                onChange={(e) => setIdentifiant(e.target.value)}
-                placeholder="votre@email.com"
-                required
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">Mot de passe</label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            {(localError || error) && (
-              <p className="text-sm text-red-600">{localError || error}</p>
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Connexion..." : "Se connecter"}
-            </Button>
-          </form>
+    <AuthLayout
+      variant="connexion"
+      title="Connexion"
+      subtitle="Accédez à votre compte Soutrali Deals"
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label htmlFor="identifiant" className="mb-1.5 block text-sm font-medium text-neutral-700">
+            Email ou téléphone
+          </label>
+          <Input
+            id="identifiant"
+            value={identifiant}
+            onChange={(e) => setIdentifiant(e.target.value)}
+            placeholder="votre@email.com ou +225 07…"
+            className="h-11 rounded-xl border-neutral-200 bg-neutral-50 focus:bg-white"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-neutral-700">
+            Mot de passe
+          </label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="h-11 rounded-xl border-neutral-200 bg-neutral-50 focus:bg-white"
+            required
+          />
+        </div>
+        {(localError || error) && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600"
+          >
+            {localError || error}
+          </motion.p>
+        )}
+        <Button
+          type="submit"
+          className="h-11 w-full rounded-xl text-base font-semibold"
+          disabled={isLoading}
+        >
+          {isLoading ? "Connexion..." : "Se connecter"}
+        </Button>
+      </form>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-neutral-200" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-neutral-500">ou</span>
-            </div>
-          </div>
+      <div className="relative my-7">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-neutral-200" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-3 text-neutral-400">ou</span>
+        </div>
+      </div>
 
-          <Button variant="outline" className="w-full" disabled title="Bientôt disponible">
-            Continuer avec Google
-          </Button>
+      <Button
+        variant="outline"
+        className="h-11 w-full rounded-xl border-neutral-200"
+        disabled
+        title="Bientôt disponible"
+      >
+        Continuer avec Google
+      </Button>
 
-          <p className="mt-6 text-center text-sm text-neutral-600">
-            Pas encore de compte ?{" "}
-            <Link href="/inscription" className="font-medium text-primary-600 hover:underline">
-              S&apos;inscrire
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+      <p className="mt-8 text-center text-sm text-neutral-600">
+        Pas encore de compte ?{" "}
+        <Link
+          href="/inscription"
+          className="font-semibold text-primary-600 hover:text-primary-700 hover:underline"
+        >
+          S&apos;inscrire gratuitement
+        </Link>
+      </p>
+    </AuthLayout>
   );
 }
 

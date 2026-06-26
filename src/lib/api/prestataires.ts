@@ -27,6 +27,27 @@ export async function fetchPrestataireById(id: string): Promise<Prestataire> {
   return data;
 }
 
+export interface UpdatePrestatairePayload {
+  description?: string;
+  prixprestataire?: number;
+  tarifHoraireMin?: number;
+  tarifHoraireMax?: number;
+  localisation?: string;
+  ville?: string;
+  anneeExperience?: string;
+  specialite?: string[];
+  zoneIntervention?: string[];
+  rayonIntervention?: number;
+}
+
+export async function updatePrestataire(
+  id: string,
+  payload: UpdatePrestatairePayload,
+): Promise<Prestataire> {
+  const { data } = await apiClient.put<Prestataire>(`/prestataire/${id}`, payload);
+  return data;
+}
+
 export async function createPrestataire(
   payload: CreatePrestatairePayload,
   files?: { cni1?: File; cni2?: File; selfie?: File },

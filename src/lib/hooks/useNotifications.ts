@@ -9,16 +9,20 @@ import {
 } from "@/lib/api/notifications";
 import { useAuthStore } from "@/stores";
 
-export function useNotifications() {
+export function useNotifications(params?: {
+  limit?: number;
+  offset?: number;
+  statut?: string;
+}) {
   const utilisateur = useAuthStore((s) => s.utilisateur);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return useQuery({
-    queryKey: ["notifications", utilisateur?._id],
-    queryFn: () => fetchNotifications(utilisateur!._id),
+    queryKey: ["notifications", utilisateur?._id, params?.limit, params?.offset, params?.statut],
+    queryFn: () => fetchNotifications(utilisateur!._id, params),
     enabled: isAuthenticated && !!utilisateur?._id,
     staleTime: 30_000,
-    refetchInterval: 60_000, // poll every 60s
+    refetchInterval: 60_000,
   });
 }
 

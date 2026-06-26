@@ -14,8 +14,8 @@ const NAV_ITEMS = [
     exact: true,
   },
   {
-    href: "/profile",
-    label: "Mon profil",
+    href: "/freelance/profil",
+    label: "Modifier le profil",
     icon: User,
   },
 ];

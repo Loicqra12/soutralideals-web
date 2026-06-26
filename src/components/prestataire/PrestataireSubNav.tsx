@@ -24,8 +24,8 @@ const NAV_ITEMS = [
     icon: Briefcase,
   },
   {
-    href: "/profile",
-    label: "Mon profil",
+    href: "/prestataire/profil",
+    label: "Modifier le profil",
     icon: User,
   },
 ];

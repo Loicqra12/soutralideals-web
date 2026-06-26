@@ -11,12 +11,27 @@ export interface Notification {
   donnees?: Record<string, unknown>;
 }
 
-export async function fetchNotifications(userId: string): Promise<Notification[]> {
-  const { data } = await apiClient.get<Notification[]>(
+export interface NotificationsResponse {
+  notifications: Notification[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export async function fetchNotifications(
+  userId: string,
+  params?: { limit?: number; offset?: number; statut?: string },
+): Promise<NotificationsResponse> {
+  const { data } = await apiClient.get<NotificationsResponse>(
     `/notification/user/${userId}`,
-    { params: { statut: undefined, limit: 20 } },
+    { params: { limit: params?.limit ?? 20, offset: params?.offset ?? 0, statut: params?.statut } },
   );
-  return Array.isArray(data) ? data : [];
+  return {
+    notifications: data.notifications ?? [],
+    total: data.total ?? 0,
+    limit: data.limit ?? 20,
+    offset: data.offset ?? 0,
+  };
 }
 
 export async function fetchUnreadCount(userId: string): Promise<number> {
