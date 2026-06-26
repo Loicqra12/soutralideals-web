@@ -40,16 +40,25 @@ export function useSocketAuth() {
       socket.connect();
     }
 
-    socket.on("connect", () => {
-      socket.emit("authenticate", utilisateur._id);
-    });
+    const authenticate = async () => {
+      try {
+        const res = await fetch("/api/auth/socket-token");
+        if (!res.ok) return;
+        const { token } = (await res.json()) as { token: string };
+        socket.emit("authenticate", { token });
+      } catch {
+        // ignore — retry on reconnect
+      }
+    };
+
+    socket.on("connect", authenticate);
 
     if (socket.connected) {
-      socket.emit("authenticate", utilisateur._id);
+      void authenticate();
     }
 
     return () => {
-      socket.off("connect");
+      socket.off("connect", authenticate);
     };
   }, [isAuthenticated, utilisateur?._id]);
 }
