@@ -33,6 +33,14 @@ export interface Prestataire {
   rayonIntervention?: number;
   nbMission?: number;
   nbAvis?: number;
+  status?: "incomplete" | "pending" | "active" | "rejected" | "suspended";
+  source?: string;
+  cni1?: string;
+  cni2?: string;
+  localisationmaps?: {
+    latitude?: number;
+    longitude?: number;
+  };
   geoloc?: {
     lat: number;
     lng: number;

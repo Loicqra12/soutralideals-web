@@ -71,7 +71,7 @@ export default function PrestataireRegistrationPage() {
         docs,
       );
       await refreshRoles();
-      router.push("/prestataire/dashboard");
+      router.push("/prestataire/finalisation");
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Inscription prestataire impossible.",
@@ -97,7 +97,7 @@ export default function PrestataireRegistrationPage() {
           <CardTitle>
             {step === 1 && "Votre zone d'activité"}
             {step === 2 && "Votre service"}
-            {step === 3 && "Vérification (optionnel)"}
+            {step === 3 && "Vérification d'identité"}
           </CardTitle>
           <p className="text-sm text-neutral-500">
             Connecté en tant que {utilisateur?.prenom} {utilisateur?.nom}
@@ -178,8 +178,8 @@ export default function PrestataireRegistrationPage() {
           {step === 3 && (
             <>
               <p className="text-sm text-neutral-600">
-                Ajoutez vos documents pour accélérer la vérification (facultatif
-                pour l&apos;instant).
+                Ajoutez vos documents maintenant ou à l&apos;étape suivante.
+                La position GPS sera demandée ensuite pour activer votre profil.
               </p>
               {(["cni1", "cni2", "selfie"] as const).map((key) => (
                 <div key={key}>

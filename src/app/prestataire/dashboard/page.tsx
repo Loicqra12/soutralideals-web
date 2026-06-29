@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
 import {
   Briefcase,
   CheckCircle2,
@@ -22,10 +21,11 @@ import {
 import { ProIcon, ProIconBox } from "@/components/prestataire/ProIcon";
 import { SimpleBarChart } from "@/components/shared/SimpleBarChart";
 import { usePrestataireDashboard } from "@/lib/hooks/usePrestataireDashboard";
-import { fetchPrestationsByPrestataire } from "@/lib/api/prestations";
 import {
   computeProfileStrength,
   formatFcfa,
+  getPrestataireStatusMessage,
+  PRESTATAIRE_STATUS_LABELS,
   STATUT_LABELS,
 } from "@/lib/utils/prestataireDashboard";
 import {
@@ -61,20 +61,14 @@ export default function PrestataireDashboardPage() {
     profileLoading,
     stats,
     missions,
+    allMissions,
     missionsTotal,
     missionsLoading,
   } = usePrestataireDashboard();
 
   const strength = computeProfileStrength(profile);
+  const statusInfo = getPrestataireStatusMessage(profile?.status, profile?.verifier);
 
-  const { data: chartMissions } = useQuery({
-    queryKey: ["prestataire-chart-missions", profile?._id],
-    queryFn: () => fetchPrestationsByPrestataire(profile!._id, { limit: 100 }),
-    enabled: !!profile?._id,
-    staleTime: 60_000,
-  });
-
-  const allMissions = chartMissions?.prestations ?? [];
   const monthlyRevenue = computeMonthlyRevenue(allMissions);
   const monthlyActivity = computeMonthlyActivity(allMissions);
   const profileViewsEstimate =
@@ -99,6 +93,30 @@ export default function PrestataireDashboardPage() {
           missionsTotal={stats?.totalPrestations ?? missionsTotal}
           isVisible={strength.isVisible}
         />
+
+        {profile?.status && profile.status !== "active" && (
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm ${
+              statusInfo.tone === "warning"
+                ? "border-amber-200 bg-amber-50 text-amber-900"
+                : statusInfo.tone === "info"
+                  ? "border-blue-200 bg-blue-50 text-blue-900"
+                  : statusInfo.tone === "error"
+                    ? "border-red-200 bg-red-50 text-red-900"
+                    : "border-green-200 bg-green-50 text-green-900"
+            }`}
+          >
+            <p className="font-medium">
+              {PRESTATAIRE_STATUS_LABELS[profile.status] ?? profile.status}
+            </p>
+            <p className="mt-1">{statusInfo.message}</p>
+            {profile.status === "incomplete" && (
+              <Button variant="outline" size="sm" className="mt-3" asChild>
+                <Link href="/prestataire/finalisation">Compléter mon identité</Link>
+              </Button>
+            )}
+          </div>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard

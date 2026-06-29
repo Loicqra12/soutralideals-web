@@ -15,16 +15,18 @@ export function usePrestataireDashboard() {
     queryKey: ["prestataire-stats", prestataireId],
     queryFn: () => fetchPrestationStats(prestataireId!),
     enabled: !!prestataireId,
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
 
   const missionsQuery = useQuery({
     queryKey: ["prestataire-missions", prestataireId],
     queryFn: () =>
-      fetchPrestationsByPrestataire(prestataireId!, { limit: 8 }),
+      fetchPrestationsByPrestataire(prestataireId!, { limit: 100 }),
     enabled: !!prestataireId,
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
+
+  const allMissions = missionsQuery.data?.prestations ?? [];
 
   return {
     profile: profileQuery.data,
@@ -32,7 +34,8 @@ export function usePrestataireDashboard() {
     profileError: profileQuery.error,
     stats: statsQuery.data,
     statsLoading: statsQuery.isLoading,
-    missions: missionsQuery.data?.prestations ?? [],
+    missions: allMissions.slice(0, 8),
+    allMissions,
     missionsTotal: missionsQuery.data?.total ?? 0,
     missionsLoading: missionsQuery.isLoading,
     refetch: () => {

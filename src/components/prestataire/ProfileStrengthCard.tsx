@@ -24,6 +24,16 @@ export function ProfileStrengthCard({
 }: ProfileStrengthCardProps) {
   const pending = items.filter((i) => !i.done);
 
+  const itemHref = (id: string) => {
+    if (id === "cni" || id === "selfie" || id === "gps") {
+      return "/prestataire/finalisation";
+    }
+    if (id === "service" || id === "ville") {
+      return "/prestataire/profil";
+    }
+    return "/prestataire/dashboard";
+  };
+
   return (
     <Card className="border-neutral-200 shadow-none">
       <CardHeader className="border-b border-neutral-100 pb-4">
@@ -74,7 +84,7 @@ export function ProfileStrengthCard({
                 </div>
               </div>
               <Button variant="outline" size="sm" asChild className="shrink-0 border-neutral-300">
-                <Link href="/profile">
+                <Link href={itemHref(item.id)}>
                   Compléter
                   <ProIcon icon={ChevronRight} size={14} className="ml-1" />
                 </Link>

@@ -98,6 +98,18 @@ export default function PrestataireProfil() {
 
         <h1 className="text-2xl font-bold text-neutral-900">Modifier mon profil</h1>
 
+        {profile.status === "incomplete" && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="font-medium">Identité non validée</p>
+            <p className="mt-1">
+              Complétez CNI, selfie et GPS pour soumettre votre profil à validation.
+            </p>
+            <Button variant="outline" size="sm" className="mt-3" asChild>
+              <Link href="/prestataire/finalisation">Finaliser mon identité</Link>
+            </Button>
+          </div>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Présentation</CardTitle>

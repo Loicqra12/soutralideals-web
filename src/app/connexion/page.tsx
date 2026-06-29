@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { useAuthStore } from "@/stores";
 
@@ -56,9 +57,8 @@ function ConnexionForm() {
           <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-neutral-700">
             Mot de passe
           </label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="h-11 rounded-xl border-neutral-200 bg-neutral-50 focus:bg-white"

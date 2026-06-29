@@ -32,26 +32,29 @@ export function computeProfileStrength(profile: Prestataire | null | undefined) 
       hint: "Indiquez votre ville ou quartier",
     },
     {
-      id: "description",
-      label: "Description de votre activité",
-      done: (profile.description?.trim().length ?? 0) > 20,
-      hint: "Présentez-vous en quelques lignes",
-    },
-    {
-      id: "tarif",
-      label: "Tarif indicatif",
-      done: (profile.prixprestataire ?? 0) > 0,
-      hint: "Fixez un tarif de référence",
+      id: "cni",
+      label: "Pièce d'identité (CNI)",
+      done: !!(profile.cni1 && profile.cni2),
+      hint: "Recto et verso de votre CNI",
     },
     {
       id: "selfie",
-      label: "Photo de profil",
-      done: !!(profile.selfie || profile.photoProfil),
-      hint: "Ajoutez une photo professionnelle",
+      label: "Photo selfie",
+      done: !!profile.selfie,
+      hint: "Photo de vérification d'identité",
+    },
+    {
+      id: "gps",
+      label: "Position GPS",
+      done: !!(
+        profile.localisationmaps?.latitude != null &&
+        profile.localisationmaps?.longitude != null
+      ),
+      hint: "Activez la géolocalisation",
     },
     {
       id: "verifier",
-      label: "Profil vérifié",
+      label: "Validation Soutrali",
       done: !!profile.verifier,
       hint: "Validation par l'équipe Soutrali",
     },
@@ -64,7 +67,8 @@ export function computeProfileStrength(profile: Prestataire | null | undefined) 
     total,
     percent: Math.round((done / total) * 100),
     items,
-    isVisible: done >= 4,
+    isVisible:
+      profile.status === "active" && profile.verifier === true,
   };
 }
 
@@ -73,6 +77,44 @@ export function formatFcfa(amount: number): string {
     style: "decimal",
     maximumFractionDigits: 0,
   }).format(amount) + " FCFA";
+}
+
+export const PRESTATAIRE_STATUS_LABELS: Record<string, string> = {
+  incomplete: "Profil incomplet",
+  pending: "En attente de validation",
+  active: "Actif",
+  rejected: "Rejeté",
+  suspended: "Suspendu",
+};
+
+export function getPrestataireStatusMessage(
+  status?: string,
+  verifier?: boolean,
+): { tone: "warning" | "info" | "success" | "error"; message: string } {
+  if (status === "active" && verifier) {
+    return {
+      tone: "success",
+      message: "Votre profil est visible sur la marketplace.",
+    };
+  }
+  if (status === "pending") {
+    return {
+      tone: "info",
+      message:
+        "Votre dossier est en cours de vérification par l'équipe Soutrali.",
+    };
+  }
+  if (status === "rejected") {
+    return {
+      tone: "error",
+      message: "Votre profil a été rejeté. Contactez le support pour en savoir plus.",
+    };
+  }
+  return {
+    tone: "warning",
+    message:
+      "Complétez votre identité (CNI, selfie, GPS) pour soumettre votre profil à validation.",
+  };
 }
 
 export const STATUT_LABELS: Record<string, string> = {

@@ -7,6 +7,7 @@ import { useMyPrestataire } from "@/lib/hooks/useMyPrestataire";
 const ONBOARDING_PREFIXES = [
   "/prestataire/inscription",
   "/prestataire/registration",
+  "/prestataire/finalisation",
 ];
 
 export default function PrestataireLayout({

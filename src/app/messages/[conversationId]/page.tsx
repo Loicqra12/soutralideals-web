@@ -17,6 +17,12 @@ import { EmojiPicker } from "@/components/messages/EmojiPicker";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { resolveMediaUrl } from "@/lib/utils/mediaUrl";
+import { getOtherParticipantId } from "@/lib/utils/conversationId";
+import {
+  getMessageParticipantId,
+  resolveOtherParticipantId,
+  resolveOtherParticipantProfile,
+} from "@/lib/utils/messageParticipants";
 import type { Message } from "@/lib/api/messages";
 
 function formatTime(dateStr?: string): string {
@@ -144,28 +150,22 @@ export default function ConversationPage({
     };
   }, [attachmentPreview]);
 
-  const otherUser = allMessages.find((m) => {
-    const expId =
-      typeof m.expediteur === "object" ? m.expediteur._id : m.expediteur;
-    return expId !== utilisateur?._id;
-  })?.expediteur;
+  const currentUserId = utilisateur?._id ?? "";
+  const otherParticipant = resolveOtherParticipantProfile(allMessages, currentUserId);
+  const otherUserId = resolveOtherParticipantId(
+    allMessages,
+    currentUserId,
+    conversationId,
+  );
 
-  const otherName =
-    typeof otherUser === "object"
-      ? `${otherUser?.prenom ?? ""} ${otherUser?.nom ?? ""}`.trim() ||
-        "Conversation"
-      : "Conversation";
+  const otherName = (() => {
+    if (!otherParticipant) return "Conversation";
+    const name = `${otherParticipant.prenom ?? ""} ${otherParticipant.nom ?? ""}`.trim();
+    return name || "Conversation";
+  })();
 
-  const getDestinataireId = (): string => {
-    const other = allMessages.find((m) => {
-      const expId =
-        typeof m.expediteur === "object" ? m.expediteur._id : m.expediteur;
-      return expId !== utilisateur?._id;
-    });
-    if (!other) return "";
-    const exp = other.expediteur;
-    return typeof exp === "object" ? (exp._id ?? "") : (exp ?? "");
-  };
+  const getDestinataireId = (): string =>
+    otherUserId ?? getOtherParticipantId(conversationId, currentUserId) ?? "";
 
   const clearAttachment = () => {
     if (attachmentPreview) URL.revokeObjectURL(attachmentPreview);
@@ -285,12 +285,9 @@ export default function ConversationPage({
           <div className="space-y-2">
             <AnimatePresence initial={false}>
               {allMessages.map((msg) => {
-                const expId =
-                  typeof msg.expediteur === "object"
-                    ? msg.expediteur._id
-                    : msg.expediteur;
+                const expId = getMessageParticipantId(msg.expediteur);
                 const isMe = expId === utilisateur?._id;
-                return <MessageBubble key={msg._id} msg={msg} isMe={isMe} />;
+                return <MessageBubble key={msg._id} msg={msg} isMe={!!isMe} />;
               })}
             </AnimatePresence>
             <div ref={bottomRef} />

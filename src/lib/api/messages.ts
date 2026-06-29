@@ -10,8 +10,8 @@ export interface MessageUser {
 
 export interface Message {
   _id: string;
-  expediteur: MessageUser;
-  destinataire: MessageUser;
+  expediteur: MessageUser | string | null;
+  destinataire: MessageUser | string | null;
   contenu: string;
   statut: "ENVOYE" | "DELIVRE" | "LU";
   typeMessage?: string;
@@ -28,11 +28,39 @@ export interface Conversation {
   nonLus: number;
 }
 
+type RawConversation = Conversation & {
+  _id?: string;
+  nombreNonLus?: number;
+  expediteurInfo?: MessageUser[];
+  destinataireInfo?: MessageUser[];
+};
+
+function normalizeConversation(raw: RawConversation, currentUserId?: string): Conversation {
+  const conversationId = raw.conversationId ?? raw._id ?? "";
+  const dm = raw.dernierMessage;
+  const expId =
+    typeof dm?.expediteur === "object"
+      ? dm.expediteur._id
+      : String(dm?.expediteur ?? "");
+  const interlocuteur =
+    raw.interlocuteur ??
+    (expId === currentUserId
+      ? raw.destinataireInfo?.[0]
+      : raw.expediteurInfo?.[0]);
+
+  return {
+    conversationId,
+    interlocuteur: interlocuteur ?? { _id: "" },
+    dernierMessage: dm,
+    nonLus: raw.nonLus ?? raw.nombreNonLus ?? 0,
+  };
+}
+
 export async function fetchConversations(userId: string): Promise<Conversation[]> {
-  const { data } = await apiClient.get<{ conversations: Conversation[] }>(
+  const { data } = await apiClient.get<{ conversations: RawConversation[] }>(
     `/messages/conversations/${userId}`,
   );
-  return data.conversations ?? [];
+  return (data.conversations ?? []).map((c) => normalizeConversation(c, userId));
 }
 
 export async function fetchConversationMessages(

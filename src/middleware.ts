@@ -6,11 +6,17 @@ const protectedRoutes = ["/profile", "/settings", "/panier", "/commandes", "/fav
 const proEspaceRoutes = ["/freelance/espace", "/emarche/espace"];
 const prestataireAuthRoutes = [
   "/prestataire/registration",
+  "/prestataire/finalisation",
   "/prestataire/dashboard",
   "/prestataire/missions",
 ];
 
-const prestataireProRoutes = ["/prestataire/dashboard", "/prestataire/missions"];
+const prestataireProRoutes = [
+  "/prestataire/dashboard",
+  "/prestataire/missions",
+  "/prestataire/finalisation",
+  "/prestataire/profil",
+];
 const freelanceAuthRoutes = ["/freelance/inscription/formulaire"];
 const emarcheAuthRoutes = ["/emarche/inscription/formulaire"];
 

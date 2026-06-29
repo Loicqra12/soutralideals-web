@@ -46,16 +46,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           isAuthenticated: true,
           isLoading: false,
         });
-        try {
-          const { roles, roleDetails } = await apiRefreshRoles();
-          set({
-            roles: roles.map((r) => r.toUpperCase()),
-            roleDetails: roleDetails ?? {},
-            activeRole: roles[0] ?? "CLIENT",
+        // Rafraîchir les rôles en arrière-plan (évite de bloquer le premier rendu)
+        apiRefreshRoles()
+          .then(({ roles, roleDetails }) => {
+            set({
+              roles: roles.map((r) => r.toUpperCase()),
+              roleDetails: roleDetails ?? {},
+              activeRole: roles[0] ?? "CLIENT",
+            });
+          })
+          .catch(() => {
+            // Garde les rôles issus de la session cookie
           });
-        } catch {
-          // Garde les rôles issus de la session cookie
-        }
       } else {
         set({ isLoading: false, isAuthenticated: false });
       }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { changePassword } from "@/lib/api/utilisateurs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function ChangePasswordForm() {
@@ -65,8 +65,7 @@ export function ChangePasswordForm() {
             <label className="mb-1 block text-sm font-medium">
               Mot de passe actuel
             </label>
-            <Input
-              type="password"
+            <PasswordInput
               value={form.currentPassword}
               onChange={(e) => update("currentPassword", e.target.value)}
               autoComplete="current-password"
@@ -77,8 +76,7 @@ export function ChangePasswordForm() {
             <label className="mb-1 block text-sm font-medium">
               Nouveau mot de passe
             </label>
-            <Input
-              type="password"
+            <PasswordInput
               value={form.newPassword}
               onChange={(e) => update("newPassword", e.target.value)}
               autoComplete="new-password"
@@ -90,8 +88,7 @@ export function ChangePasswordForm() {
             <label className="mb-1 block text-sm font-medium">
               Confirmer le nouveau mot de passe
             </label>
-            <Input
-              type="password"
+            <PasswordInput
               value={form.confirmPassword}
               onChange={(e) => update("confirmPassword", e.target.value)}
               autoComplete="new-password"

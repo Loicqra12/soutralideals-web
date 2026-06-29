@@ -31,7 +31,19 @@ export async function register(payload: RegisterPayload): Promise<SessionRespons
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message ?? "Inscription impossible");
+    const details =
+      typeof err === "object" && err && "details" in err && Array.isArray(err.details)
+        ? (err.details as Array<{ message?: string }>)
+        : [];
+    const detailMessage = details.find((d) => d.message)?.message;
+    const message =
+      detailMessage ??
+      (typeof err === "object" && err && "message" in err
+        ? String((err as { message: string }).message)
+        : typeof err === "object" && err && "error" in err
+          ? String((err as { error: string }).error)
+          : "Inscription impossible");
+    throw new Error(message);
   }
   return res.json();
 }

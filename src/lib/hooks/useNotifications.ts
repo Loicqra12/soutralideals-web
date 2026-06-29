@@ -21,8 +21,8 @@ export function useNotifications(params?: {
     queryKey: ["notifications", utilisateur?._id, params?.limit, params?.offset, params?.statut],
     queryFn: () => fetchNotifications(utilisateur!._id, params),
     enabled: isAuthenticated && !!utilisateur?._id,
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
   });
 }
 
@@ -34,8 +34,8 @@ export function useUnreadCount() {
     queryKey: ["notifications-count", utilisateur?._id],
     queryFn: () => fetchUnreadCount(utilisateur!._id),
     enabled: isAuthenticated && !!utilisateur?._id,
-    staleTime: 20_000,
-    refetchInterval: 30_000,
+    staleTime: 45_000,
+    refetchInterval: 90_000,
   });
 }
 

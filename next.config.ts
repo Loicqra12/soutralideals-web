@@ -7,6 +7,13 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: projectRoot,
+  // Sentry / OpenTelemetry — évite les alias hashés Turbopack (require-in-the-middle-xxx)
+  serverExternalPackages: [
+    "@sentry/nextjs",
+    "@sentry/node",
+    "require-in-the-middle",
+    "import-in-the-middle",
+  ],
   turbopack: {
     root: projectRoot,
   },

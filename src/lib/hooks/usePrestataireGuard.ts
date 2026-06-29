@@ -48,7 +48,6 @@ export function usePrestataireGuard(redirectTo = "/prestataire/dashboard") {
         if (cancelled) return;
 
         if (profiles.length > 0) {
-          await refreshRoles();
           setAlreadyPrestataire(true);
           router.replace(redirectTo);
           return;

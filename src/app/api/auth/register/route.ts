@@ -50,11 +50,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (!res.ok) {
-      const error = await res.text();
-      return NextResponse.json(
-        { message: error || "Inscription impossible" },
-        { status: res.status },
-      );
+      const err = await res.json().catch(() => ({}));
+      const details =
+        typeof err === "object" && err && "details" in err && Array.isArray(err.details)
+          ? (err.details as Array<{ message?: string }>)
+          : [];
+      const detailMessage = details.find((d) => d.message)?.message;
+      const message =
+        detailMessage ??
+        (typeof err === "object" && err && "error" in err
+          ? String((err as { error: string }).error)
+          : typeof err === "object" && err && "message" in err
+            ? String((err as { message: string }).message)
+            : "Inscription impossible");
+      return NextResponse.json({ message, details }, { status: res.status });
     }
 
     const auth = (await res.json()) as AuthResponse;

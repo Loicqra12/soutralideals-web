@@ -24,9 +24,10 @@ export interface LoginPayload {
 export interface RegisterPayload {
   nom: string;
   prenom: string;
-  telephone: string;         // Obligatoire côté backend
+  telephone: string;
   password: string;
   email?: string;
   genre?: string;
-  role?: string;             // PascalCase : "Client", "Prestataire"…
+  role?: string;
+  phoneVerificationToken?: string;
 }

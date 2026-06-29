@@ -48,7 +48,7 @@ export function PrestataireCard({
     prestataire.selfie ??
       getUtilisateurPhoto(prestataire.photoProfil, prestataire.utilisateur),
   );
-  const coverUrl = resolveMediaUrl(prestataire.photoProfil);
+  const coverUrl = photo;
 
   return (
     <motion.div variants={fadeInUp}>

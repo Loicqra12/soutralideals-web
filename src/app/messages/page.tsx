@@ -73,7 +73,8 @@ export default function MessagesPage() {
 
         {!isLoading && conversations.length > 0 && (
           <AnimatedGrid className="mt-6 space-y-2">
-            {conversations.map((conv) => {
+            {conversations.map((conv, index) => {
+              const convId = conv.conversationId || `conv-${index}`;
               const other = conv.interlocuteur;
               const name =
                 `${other?.prenom ?? ""} ${other?.nom ?? ""}`.trim() || "Utilisateur";
@@ -82,9 +83,9 @@ export default function MessagesPage() {
               const unread = conv.nonLus ?? 0;
 
               return (
-                <AnimatedItem key={conv.conversationId}>
+                <AnimatedItem key={convId}>
                   <Link
-                    href={`/messages/${conv.conversationId}`}
+                    href={`/messages/${encodeURIComponent(convId)}`}
                     className="block"
                   >
                     <motion.div
