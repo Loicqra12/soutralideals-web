@@ -2,22 +2,20 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import type { Utilisateur } from "@/types";
+import {
+  COOKIE_NAMES,
+  COOKIE_OPTIONS,
+  sanitizeUser,
+  buildSafeUserCookie,
+} from "@/lib/auth/cookie-utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api";
-const USER_COOKIE = "user_data";
-
-function sanitizeUser(user: Utilisateur & { password?: string; tokens?: unknown }) {
-  const safe = { ...user };
-  delete safe.password;
-  delete safe.tokens;
-  return safe;
-}
 
 export async function PUT(request: NextRequest) {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get("auth_token")?.value;
-    const userRaw = cookieStore.get(USER_COOKIE)?.value;
+    const token = cookieStore.get(COOKIE_NAMES.token)?.value;
+    const userRaw = cookieStore.get(COOKIE_NAMES.user)?.value;
 
     if (!token || !userRaw) {
       return NextResponse.json({ message: "Non authentifié" }, { status: 401 });
@@ -55,18 +53,17 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const utilisateur = sanitizeUser(
-      (await backendRes.json()) as Utilisateur & { password?: string },
-    );
+    // Nettoyer les champs sensibles puis ne stocker que le payload minimal
+    const rawUser = (await backendRes.json()) as Utilisateur;
+    const utilisateur = sanitizeUser(rawUser);
+    const safePayload = buildSafeUserCookie(utilisateur);
 
     const response = NextResponse.json({ utilisateur });
-    response.cookies.set(USER_COOKIE, JSON.stringify(utilisateur), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
+    response.cookies.set(
+      COOKIE_NAMES.user,
+      JSON.stringify(safePayload),
+      COOKIE_OPTIONS,
+    );
     return response;
   } catch {
     return NextResponse.json(
@@ -75,3 +72,4 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
+

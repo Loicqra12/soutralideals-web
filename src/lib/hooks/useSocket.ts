@@ -84,7 +84,9 @@ export function useRealtimeConversation(
 
     socket.on("new-message", (msg: Message) => {
       const senderId =
-        typeof msg.expediteur === "object" ? msg.expediteur._id : msg.expediteur;
+        typeof msg.expediteur === "object" && msg.expediteur !== null
+          ? msg.expediteur._id
+          : msg.expediteur;
       if (senderId !== utilisateur?._id) {
         onNewMessage(msg);
       }

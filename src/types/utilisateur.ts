@@ -9,7 +9,17 @@ export interface Utilisateur {
   adresse?: string;
   ville?: string;
   photoProfil?: string;
+  /** Présent dans la réponse brute du backend — toujours supprimé avant stockage */
+  password?: string;
+  /** Présent dans la réponse brute du backend — toujours supprimé avant stockage */
+  tokens?: unknown[];
 }
+
+/**
+ * Utilisateur sans les champs sensibles jamais exposés au client.
+ * À utiliser partout sauf juste après l'appel backend (avant sanitize).
+ */
+export type SafeUtilisateur = Omit<Utilisateur, "password" | "tokens">;
 
 export interface AuthResponse {
   utilisateur: Utilisateur;

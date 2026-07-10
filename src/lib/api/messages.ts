@@ -39,7 +39,7 @@ function normalizeConversation(raw: RawConversation, currentUserId?: string): Co
   const conversationId = raw.conversationId ?? raw._id ?? "";
   const dm = raw.dernierMessage;
   const expId =
-    typeof dm?.expediteur === "object"
+    typeof dm?.expediteur === "object" && dm.expediteur !== null
       ? dm.expediteur._id
       : String(dm?.expediteur ?? "");
   const interlocuteur =

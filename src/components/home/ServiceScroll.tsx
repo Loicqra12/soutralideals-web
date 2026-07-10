@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Service } from "@/types";
 import { getCategoryIconConfig } from "@/lib/utils/categoryIcons";
 import { getServiceImageUrl } from "@/lib/utils/serviceImage";
+import { EntityImage } from "@/components/shared/EntityImage";
 import { poleToPath, type PoleType } from "@/lib/utils/filters";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,12 @@ function ServiceItem({
         )}
       >
         {imageUrl ? (
-          <Image src={imageUrl} alt="" fill sizes="80px" className="object-cover" />
+          <EntityImage
+            src={imageUrl}
+            alt=""
+            className="absolute inset-0"
+            sizes="80px"
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <Icon className={cn("h-8 w-8", color)} strokeWidth={1.75} />

@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Categorie } from "@/types";
 import { getCategoryIconConfig } from "@/lib/utils/categoryIcons";
 import { getCategoryImageUrl } from "@/lib/utils/categoryImage";
+import { EntityImage } from "@/components/shared/EntityImage";
 import { poleToPath, type PoleType } from "@/lib/utils/filters";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +35,12 @@ function CategoryItem({
         )}
       >
         {imageUrl ? (
-          <Image src={imageUrl} alt="" fill sizes="28px" className="object-cover" />
+          <EntityImage
+            src={imageUrl}
+            alt=""
+            className="absolute inset-0 rounded-full"
+            sizes="28px"
+          />
         ) : (
           <span className="flex h-full w-full items-center justify-center">
             <Icon className={cn("h-3.5 w-3.5", color)} />

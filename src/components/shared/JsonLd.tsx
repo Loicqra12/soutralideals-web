@@ -1,12 +1,19 @@
 /**
  * Injecte un script JSON-LD pour le SEO (rich snippets Google).
- * Compatible avec les composants "use client" via dangerouslySetInnerHTML.
+ * Échappe les caractères dangereux pour éviter la sortie du bloc script.
  */
+function safeJsonLdStringify(data: Record<string, unknown>): string {
+  return JSON.stringify(data)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026");
+}
+
 export function JsonLd({ data }: { data: Record<string, unknown> }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(data) }}
     />
   );
 }

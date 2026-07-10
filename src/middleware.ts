@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { fetchUserRolesFromApi } from "@/lib/auth/roles";
+import { COOKIE_NAMES } from "@/lib/auth/cookie-utils";
 
 const protectedRoutes = ["/profile", "/settings", "/panier", "/commandes", "/favoris", "/messages", "/notifications"];
 const proEspaceRoutes = ["/freelance/espace", "/emarche/espace"];
@@ -20,9 +21,6 @@ const prestataireProRoutes = [
 const freelanceAuthRoutes = ["/freelance/inscription/formulaire"];
 const emarcheAuthRoutes = ["/emarche/inscription/formulaire"];
 
-const ROLES_COOKIE = "user_roles";
-const USER_COOKIE = "user_data";
-
 function parseRoles(raw?: string): string[] {
   if (!raw) return [];
   try {
@@ -33,9 +31,9 @@ function parseRoles(raw?: string): string[] {
 }
 
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get("auth_token")?.value;
-  const rolesRaw = request.cookies.get(ROLES_COOKIE)?.value;
-  const userRaw = request.cookies.get(USER_COOKIE)?.value;
+  const token = request.cookies.get(COOKIE_NAMES.token)?.value;
+  const rolesRaw = request.cookies.get(COOKIE_NAMES.roles)?.value;
+  const userRaw = request.cookies.get(COOKIE_NAMES.user)?.value;
   const { pathname } = request.nextUrl;
 
   const needsAuth =
@@ -61,7 +59,7 @@ export async function middleware(request: NextRequest) {
         roles = fresh.roles;
         if (roles.includes("PRESTATAIRE")) {
           const response = NextResponse.next();
-          response.cookies.set(ROLES_COOKIE, JSON.stringify(roles), {
+          response.cookies.set(COOKIE_NAMES.roles, JSON.stringify(roles), {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
@@ -70,8 +68,13 @@ export async function middleware(request: NextRequest) {
           });
           return response;
         }
-      } catch {
-        // ignore
+      } catch (err) {
+        // En développement, tracer l'erreur pour faciliter le debug
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[middleware] Erreur fetch rôles prestataire:", err);
+        }
+        // En production : continuer sans bloquer — le check roles.includes ci-dessous
+        // redirigera vers /prestataire/registration si le rôle est absent
       }
     }
 
@@ -102,3 +105,4 @@ export const config = {
     "/emarche/inscription/formulaire",
   ],
 };
+

@@ -125,7 +125,7 @@ export default function ConversationPage({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  const { partnerTyping, emitTypingStart, emitTypingStop, sendViaSocket } =
+  const { partnerTyping, emitTypingStart, emitTypingStop } =
     useRealtimeConversation(conversationId, handleNewMessage);
 
   const allMessages = [
@@ -214,7 +214,6 @@ export default function ConversationPage({
       conversationId,
     };
 
-    sendViaSocket(payload);
     try {
       if (savedFile) {
         const { sendMessageWithAttachment } = await import("@/lib/api/messages");

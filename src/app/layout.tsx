@@ -5,6 +5,7 @@ import { QueryProvider } from "@/components/providers/QueryProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AppShell } from "@/components/layout/AppShell";
 import { Toaster } from "sonner";
+import { ServiceWorkerProvider } from "@/components/providers/ServiceWorkerProvider";
 import type { Viewport } from "next";
 
 const inter = Inter({
@@ -80,6 +81,7 @@ export default function RootLayout({
             closeButton
             toastOptions={{ duration: 4000 }}
           />
+          <ServiceWorkerProvider />
         </QueryProvider>
       </body>
     </html>

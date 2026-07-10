@@ -1,4 +1,4 @@
-const CACHE_NAME = "soutrali-v1";
+const CACHE_NAME = "soutrali-v2";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",
