@@ -6,6 +6,7 @@ import { MobileHeader } from "./MobileHeader";
 import { BottomNav } from "./BottomNav";
 import { Footer } from "./Footer";
 import { CookieBanner } from "@/components/consent/CookieBanner";
+import { FirebaseAnalyticsProvider } from "@/components/providers/FirebaseAnalyticsProvider";
 import { ServiceWorkerProvider } from "@/components/providers/ServiceWorkerProvider";
 import { SocketAuthProvider } from "@/components/providers/SocketAuthProvider";
 
@@ -20,6 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <>
         <main className="flex-1">{children}</main>
         <CookieBanner />
+        <FirebaseAnalyticsProvider />
         <ServiceWorkerProvider />
         <SocketAuthProvider />
       </>
@@ -37,6 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile bottom nav (Accueil / Métiers / Freelance / E-marché / Profil) */}
       <BottomNav />
       <CookieBanner />
+      <FirebaseAnalyticsProvider />
       <ServiceWorkerProvider />
       <SocketAuthProvider />
     </>
