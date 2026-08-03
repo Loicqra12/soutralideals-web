@@ -31,8 +31,9 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Ne pas cacher les requêtes API ou auth
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/api/auth/")) {
+  // Ne pas cacher les requêtes API ou auth - laisser passer directement au réseau
+  if (url.pathname.startsWith("/api/")) {
+    event.respondWith(fetch(event.request));
     return;
   }
 
