@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { useAuthStore } from "@/stores";
 import { sendOtp, verifyOtp } from "@/lib/api/otp";
 
@@ -17,6 +18,7 @@ type Step = "phone" | "code" | "form";
 export default function InscriptionPage() {
   const router = useRouter();
   const register = useAuthStore((s) => s.register);
+  const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const isLoading = useAuthStore((s) => s.isLoading);
 
   const [step, setStep] = useState<Step>("phone");
@@ -100,6 +102,22 @@ export default function InscriptionPage() {
     }
   };
 
+  const handleGoogleSuccess = async (idToken: string) => {
+    setError("");
+    try {
+      await loginWithGoogle(idToken);
+      router.push("/");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Inscription Google échouée",
+      );
+    }
+  };
+
+  const handleGoogleError = (err: Error) => {
+    setError(err.message);
+  };
+
   return (
     <AuthLayout
       variant="inscription"
@@ -116,13 +134,12 @@ export default function InscriptionPage() {
         {(["phone", "code", "form"] as Step[]).map((s, i) => (
           <div
             key={s}
-            className={`h-1.5 flex-1 rounded-full ${
-              (step === "phone" && i === 0) ||
+            className={`h-1.5 flex-1 rounded-full ${(step === "phone" && i === 0) ||
               (step === "code" && i <= 1) ||
               step === "form"
-                ? "bg-primary-500"
-                : "bg-neutral-200"
-            }`}
+              ? "bg-primary-500"
+              : "bg-neutral-200"
+              }`}
           />
         ))}
       </div>
@@ -157,6 +174,22 @@ export default function InscriptionPage() {
               "Recevoir le code SMS"
             )}
           </Button>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-neutral-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-3 text-neutral-400">ou</span>
+            </div>
+          </div>
+
+          <GoogleSignInButton
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            disabled={isLoading || otpLoading}
+            text="S'inscrire avec Google"
+          />
         </div>
       )}
 

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { useAuthStore } from "@/stores";
 
 function ConnexionForm() {
@@ -15,6 +16,7 @@ function ConnexionForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") ?? "/";
   const login = useAuthStore((s) => s.login);
+  const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const error = useAuthStore((s) => s.error);
   const isLoading = useAuthStore((s) => s.isLoading);
 
@@ -31,6 +33,22 @@ function ConnexionForm() {
     } catch {
       setLocalError("Identifiants incorrects");
     }
+  };
+
+  const handleGoogleSuccess = async (idToken: string) => {
+    setLocalError("");
+    try {
+      await loginWithGoogle(idToken);
+      router.push(redirect);
+    } catch (err) {
+      setLocalError(
+        err instanceof Error ? err.message : "Connexion Google échouée",
+      );
+    }
+  };
+
+  const handleGoogleError = (err: Error) => {
+    setLocalError(err.message);
   };
 
   return (
@@ -92,14 +110,11 @@ function ConnexionForm() {
         </div>
       </div>
 
-      <Button
-        variant="outline"
-        className="h-11 w-full rounded-xl border-neutral-200"
-        disabled
-        title="Bientôt disponible"
-      >
-        Continuer avec Google
-      </Button>
+      <GoogleSignInButton
+        onSuccess={handleGoogleSuccess}
+        onError={handleGoogleError}
+        disabled={isLoading}
+      />
 
       <p className="mt-8 text-center text-sm text-neutral-600">
         Pas encore de compte ?{" "}

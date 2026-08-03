@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { Utilisateur } from "@/types";
 import type { RoleDetails } from "@/lib/auth/roles";
 import { getSession, login as apiLogin, logout as apiLogout, register as apiRegister, refreshRoles as apiRefreshRoles } from "@/lib/api/auth";
+import { loginWithGoogle as apiLoginWithGoogle } from "@/lib/auth/google-auth";
 import { updateProfile as apiUpdateProfile } from "@/lib/api/utilisateurs";
 import type { UpdateProfilePayload } from "@/lib/api/utilisateurs";
 import type { LoginPayload, RegisterPayload } from "@/types";
@@ -16,6 +17,7 @@ interface AuthStore {
   error: string | null;
   hydrate: () => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => Promise<void>;
   refreshRoles: () => Promise<void>;
@@ -81,6 +83,28 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Connexion impossible";
+      set({ error: message, isLoading: false });
+      throw error;
+    }
+  },
+
+  loginWithGoogle: async (idToken) => {
+    set({ isLoading: true, error: null });
+    try {
+      const session = await apiLoginWithGoogle(idToken);
+      set({
+        utilisateur: session.utilisateur,
+        roles: session.roles,
+        roleDetails: session.roleDetails ?? {},
+        activeRole: session.activeRole,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Connexion Google impossible";
       set({ error: message, isLoading: false });
       throw error;
     }

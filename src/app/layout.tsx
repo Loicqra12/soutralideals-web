@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { GoogleAuthProvider } from "@/components/providers/GoogleAuthProvider";
 import { AppShell } from "@/components/layout/AppShell";
 import { Toaster } from "sonner";
 import { ServiceWorkerProvider } from "@/components/providers/ServiceWorkerProvider";
@@ -71,18 +72,20 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="flex min-h-full flex-col" suppressHydrationWarning>
-        <QueryProvider>
-          <AuthProvider>
-            <AppShell>{children}</AppShell>
-          </AuthProvider>
-          <Toaster
-            position="top-right"
-            richColors
-            closeButton
-            toastOptions={{ duration: 4000 }}
-          />
-          <ServiceWorkerProvider />
-        </QueryProvider>
+        <GoogleAuthProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <AppShell>{children}</AppShell>
+            </AuthProvider>
+            <Toaster
+              position="top-right"
+              richColors
+              closeButton
+              toastOptions={{ duration: 4000 }}
+            />
+            <ServiceWorkerProvider />
+          </QueryProvider>
+        </GoogleAuthProvider>
       </body>
     </html>
   );
