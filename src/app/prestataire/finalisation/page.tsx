@@ -9,6 +9,8 @@ import {
   Loader2,
   User,
   ShieldCheck,
+  ShieldOff,
+  Info,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -80,8 +82,10 @@ export default function PrestataireFinalisationPage() {
 
   const hasDoc = (key: DocKey) => !!(docs[key] || existingDocs[key]);
 
-  const canGoStep2 = hasDoc("cni1") && hasDoc("cni2") && hasDoc("selfie");
-  const canSubmit = canGoStep2 && location != null;
+  // Localisation seule suffit pour publier (sans badge)
+  const canSubmit = location != null;
+  // CNI recto + verso + selfie → badge "Identité vérifiée"
+  const hasIdentity = hasDoc("cni1") && hasDoc("cni2") && hasDoc("selfie");
 
   if (isLoading) {
     return (
@@ -156,10 +160,10 @@ export default function PrestataireFinalisationPage() {
         </div>
         <div>
           <h1 className="text-lg font-semibold text-neutral-900">
-            Vérification d&apos;identité
+            Finalisation du profil
           </h1>
           <p className="text-sm text-neutral-500">
-            Obligatoire pour publier votre profil sur la marketplace
+            Définissez votre zone pour être visible — ajoutez la CNI pour le badge Vérifié
           </p>
         </div>
       </div>
@@ -179,7 +183,7 @@ export default function PrestataireFinalisationPage() {
       <Card>
         <CardHeader>
           <CardTitle>
-            {step === 1 && "Documents d'identité"}
+            {step === 1 && "Documents d'identité (optionnel)"}
             {step === 2 && "Zone d'intervention (GPS)"}
             {step === 3 && "Confirmation"}
           </CardTitle>
@@ -187,10 +191,25 @@ export default function PrestataireFinalisationPage() {
         <CardContent className="space-y-4">
           {step === 1 && (
             <>
-              <p className="text-sm text-neutral-600">
-                Ces documents permettent à l&apos;équipe Soutrali de vérifier votre
-                identité avant activation du profil.
-              </p>
+              {/* Explication des deux niveaux */}
+              <div className="space-y-2">
+                <div className="flex items-start gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                  <span>
+                    <strong>Avec CNI + selfie</strong> → badge{" "}
+                    <span className="font-semibold">&quot;Identité vérifiée&quot;</span> affiché sur
+                    votre profil. Les clients vous font plus confiance.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2 rounded-lg bg-neutral-50 p-3 text-sm text-neutral-700">
+                  <ShieldOff className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" />
+                  <span>
+                    <strong>Sans documents</strong> → profil publié sans badge. Vous
+                    pouvez toujours les ajouter plus tard depuis votre tableau de bord.
+                  </span>
+                </div>
+              </div>
+
               {(["cni1", "cni2", "selfie"] as const).map((key) => {
                 const meta = DOC_LABELS[key];
                 const Icon = meta.icon;
@@ -205,6 +224,9 @@ export default function PrestataireFinalisationPage() {
                       <div className="flex items-center gap-2">
                         <Icon className="h-4 w-4 text-neutral-500" />
                         <span className="text-sm font-medium">{meta.title}</span>
+                        <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500">
+                          OPTIONNEL
+                        </span>
                       </div>
                       {hasDoc(key) && (
                         <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -237,9 +259,16 @@ export default function PrestataireFinalisationPage() {
                   </div>
                 );
               })}
+
+              {hasIdentity && (
+                <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  Documents complets — badge &quot;Identité vérifiée&quot; sera attribué après validation.
+                </div>
+              )}
+
               <Button
                 className="w-full"
-                disabled={!canGoStep2}
                 onClick={() => setStep(2)}
               >
                 Continuer
@@ -280,16 +309,23 @@ export default function PrestataireFinalisationPage() {
               <ul className="space-y-2 text-sm text-neutral-700">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  CNI recto et verso
+                  Zone d&apos;intervention : {location?.label}
                 </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  Photo selfie
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  Zone : {location?.label}
-                </li>
+                {hasIdentity ? (
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    Documents d&apos;identité fournis → badge{" "}
+                    <span className="font-semibold text-emerald-700">Identité vérifiée</span>
+                  </li>
+                ) : (
+                  <li className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-neutral-400" />
+                    <span className="text-neutral-500">
+                      Pas de CNI — profil publié{" "}
+                      <span className="font-medium">sans badge</span>. Vous pourrez l&apos;ajouter plus tard.
+                    </span>
+                  </li>
+                )}
               </ul>
               <p className="rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-900">
                 Après envoi, votre profil passera en{" "}

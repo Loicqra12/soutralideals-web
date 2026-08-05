@@ -1,70 +1,81 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import type { NextRequest } from "next/server";
+import { fetchUserRolesFromApi } from "@/lib/auth/roles";
+import {
+  COOKIE_NAMES,
+  COOKIE_OPTIONS,
+  REFRESH_COOKIE_OPTIONS,
+  sanitizeUser,
+  buildSafeUserCookie,
+} from "@/lib/auth/cookie-utils";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api";
 
-/**
- * POST /api/auth/google-login
- * Authentifie l'utilisateur avec Google OAuth (compte existant)
- */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { idToken } = body;
+    const { idToken, role = "client" } = body as {
+      idToken?: string;
+      role?: string;
+    };
 
     if (!idToken) {
       return NextResponse.json(
-        { message: "ID Token manquant" },
+        { message: "ID Token Google manquant" },
         { status: 400 },
       );
     }
 
-    // Appel au backend Node.js
-    const backendRes = await fetch(`${API_URL}/api/utilisateurs/login/google`, {
+    const backendRes = await fetch(`${API_URL}/login/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        idToken,
-        role: "client"
-      }),
+      body: JSON.stringify({ idToken, role }),
     });
 
     if (!backendRes.ok) {
-      const error = await backendRes.json().catch(() => ({}));
+      const err = await backendRes.json().catch(() => ({}));
       return NextResponse.json(
-        { message: error.message || error.error || "Connexion Google échouée" },
+        { message: err.error ?? err.message ?? "Connexion Google échouée" },
         { status: backendRes.status },
       );
     }
 
     const data = await backendRes.json();
+    const safeUser = sanitizeUser(data.utilisateur);
 
-    // Stocker le token dans un cookie httpOnly
-    const cookieStore = await cookies();
-    cookieStore.set("authToken", data.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 jours
-      path: "/",
+    const { roles, details } = await fetchUserRolesFromApi(
+      safeUser._id,
+      data.token,
+    );
+
+    const response = NextResponse.json({
+      utilisateur: safeUser,
+      roles,
+      activeRole: roles[0] ?? "CLIENT",
+      roleDetails: details,
     });
 
+    const safeUserCookie = buildSafeUserCookie(safeUser);
+    response.cookies.set(COOKIE_NAMES.token, data.token, COOKIE_OPTIONS);
     if (data.refreshToken) {
-      cookieStore.set("refreshToken", data.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 30, // 30 jours
-        path: "/",
-      });
+      response.cookies.set(
+        COOKIE_NAMES.refreshToken,
+        data.refreshToken,
+        REFRESH_COOKIE_OPTIONS,
+      );
     }
+    response.cookies.set(
+      COOKIE_NAMES.user,
+      JSON.stringify(safeUserCookie),
+      COOKIE_OPTIONS,
+    );
+    response.cookies.set(
+      COOKIE_NAMES.roles,
+      JSON.stringify(roles),
+      COOKIE_OPTIONS,
+    );
 
-    return NextResponse.json({
-      utilisateur: data.utilisateur,
-      roles: [data.utilisateur.role || "CLIENT"],
-      activeRole: data.utilisateur.role || "CLIENT",
-      roleDetails: {},
-    });
+    return response;
   } catch (error) {
     console.error("[Google Login Error]", error);
     return NextResponse.json(

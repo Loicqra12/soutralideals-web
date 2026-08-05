@@ -27,7 +27,7 @@ function timeAgo(dateStr?: string): string {
 
 export default function MessagesPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const { data: conversations = [], isLoading } = useConversations();
+  const { data: conversations = [], isLoading, error: convError } = useConversations();
 
   if (!isAuthenticated) {
     return (
@@ -56,7 +56,15 @@ export default function MessagesPage() {
           </div>
         )}
 
-        {!isLoading && conversations.length === 0 && (
+        {!isLoading && convError && (
+          <div className="mt-16 flex flex-col items-center text-center">
+            <MessageCircle className="h-14 w-14 text-red-200" />
+            <p className="mt-4 text-lg font-semibold text-red-700">Impossible de charger les messages</p>
+            <p className="mt-2 text-sm text-red-500">Vérifiez votre connexion ou reconnectez-vous.</p>
+          </div>
+        )}
+
+        {!isLoading && !convError && conversations.length === 0 && (
           <div className="mt-16 flex flex-col items-center text-center">
             <MessageCircle className="h-16 w-16 text-neutral-200" />
             <p className="mt-4 text-lg font-semibold text-neutral-900">

@@ -28,9 +28,7 @@ export function PrestationRequestModal({
 
   const [adresse, setAdresse] = useState("");
   const [ville, setVille] = useState("");
-  const [datePrestation, setDatePrestation] = useState("");
   const [notesClient, setNotesClient] = useState("");
-  const [telephoneUrgence, setTelephoneUrgence] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -61,10 +59,8 @@ export function PrestationRequestModal({
         service: serviceId,
         adresse: adresse.trim(),
         ville: ville.trim(),
-        datePrestation: datePrestation || undefined,
         notesClient: notesClient.trim() || undefined,
         description: notesClient.trim() || `Demande pour ${prestataireName}`,
-        telephoneUrgence: telephoneUrgence.trim() || undefined,
       });
       setSuccess(true);
     } catch {
@@ -91,15 +87,15 @@ export function PrestationRequestModal({
           <X className="h-5 w-5" />
         </button>
         <CardHeader>
-          <CardTitle id="prestation-modal-title">Demander un devis</CardTitle>
+          <CardTitle id="prestation-modal-title">Demander un service</CardTitle>
           <p className="text-sm text-neutral-600">{prestataireName}</p>
         </CardHeader>
         <CardContent>
           {success ? (
             <div className="space-y-4 text-center">
               <p className="text-neutral-700">
-                Votre demande a été envoyée. Le prestataire vous contactera
-                bientôt.
+                Demande envoyée. Le prestataire pourra vous contacter — précisez
+                le besoin en photo ou vocal dans le chat.
               </p>
               <Button className="w-full" onClick={onClose}>
                 Fermer
@@ -107,6 +103,10 @@ export function PrestationRequestModal({
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              <p className="rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-900">
+                Mise en relation gratuite. Le prix se discute ensuite avec le
+                prestataire (chat, appel ou sur place).
+              </p>
               <div>
                 <label className="mb-1 block text-sm font-medium">
                   Adresse <span className="text-red-500">*</span>
@@ -114,7 +114,7 @@ export function PrestationRequestModal({
                 <Input
                   value={adresse}
                   onChange={(e) => setAdresse(e.target.value)}
-                  placeholder="Quartier, rue, repères..."
+                  placeholder="Quartier, rue, repères…"
                   required
                 />
               </div>
@@ -125,45 +125,27 @@ export function PrestationRequestModal({
                 <Input
                   value={ville}
                   onChange={(e) => setVille(e.target.value)}
-                  placeholder="Abidjan, Bouaké..."
+                  placeholder="Abidjan, Bouaké…"
                   required
                 />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium">
-                  Date souhaitée
-                </label>
-                <Input
-                  type="date"
-                  value={datePrestation}
-                  onChange={(e) => setDatePrestation(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Détails de la demande
+                  Précision{" "}
+                  <span className="font-normal text-neutral-400">(optionnel)</span>
                 </label>
                 <textarea
                   value={notesClient}
                   onChange={(e) => setNotesClient(e.target.value)}
-                  rows={3}
+                  rows={2}
+                  maxLength={500}
                   className="flex w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-                  placeholder="Décrivez votre besoin..."
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Téléphone de contact
-                </label>
-                <Input
-                  value={telephoneUrgence}
-                  onChange={(e) => setTelephoneUrgence(e.target.value)}
-                  placeholder="+225 07 00 00 00 00"
+                  placeholder="Ex. fuite sous l’évier — ou envoyez une photo dans le chat"
                 />
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Envoi..." : "Envoyer la demande"}
+                {loading ? "Envoi…" : "Envoyer la demande"}
               </Button>
             </form>
           )}

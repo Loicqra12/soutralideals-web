@@ -2,7 +2,6 @@
 
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft, ImagePlus, Loader2, Send, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,6 +13,8 @@ import { useRealtimeConversation } from "@/lib/hooks/useSocket";
 import { useAuthStore } from "@/stores";
 import { Button } from "@/components/ui/button";
 import { EmojiPicker } from "@/components/messages/EmojiPicker";
+import { VoiceRecorder } from "@/components/messages/VoiceRecorder";
+import { AudioPlayer } from "@/components/messages/AudioPlayer";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { resolveMediaUrl } from "@/lib/utils/mediaUrl";
@@ -33,6 +34,14 @@ function formatTime(dateStr?: string): string {
   });
 }
 
+function isLikelyImageUrl(url: string): boolean {
+  const lower = url.toLowerCase();
+  return (
+    lower.includes("/image/upload/") ||
+    /\.(jpe?g|png|gif|webp|avif|bmp)(\?|$)/i.test(lower)
+  );
+}
+
 function MessageBubble({
   msg,
   isMe,
@@ -40,10 +49,26 @@ function MessageBubble({
   msg: Message;
   isMe: boolean;
 }) {
+  const [imgBroken, setImgBroken] = useState(false);
+
+  const rawAttachment = msg.pieceJointe?.trim() || null;
+  const isImageType =
+    msg.typePieceJointe === "IMAGE" ||
+    (!msg.typePieceJointe && !!rawAttachment && isLikelyImageUrl(rawAttachment));
+
   const imageUrl =
-    msg.pieceJointe && msg.typePieceJointe === "IMAGE"
-      ? resolveMediaUrl(msg.pieceJointe)
+    rawAttachment && isImageType && !imgBroken
+      ? resolveMediaUrl(rawAttachment) ?? rawAttachment
       : null;
+
+  const audioUrl =
+    rawAttachment && msg.typePieceJointe === "AUDIO" ? rawAttachment : null;
+
+  const hasMedia = !!imageUrl || !!audioUrl;
+  const showText =
+    msg.contenu &&
+    msg.contenu !== "📷 Photo" &&
+    msg.contenu !== "🎤 Message vocal";
 
   return (
     <motion.div
@@ -58,24 +83,34 @@ function MessageBubble({
           isMe
             ? "rounded-tr-sm bg-primary-600 text-white"
             : "rounded-tl-sm bg-white text-neutral-900 shadow-sm",
-          imageUrl ? "p-1" : "px-4 py-2.5",
+          imageUrl ? "p-1" : audioUrl ? "px-3 py-2" : "px-4 py-2.5",
         )}
       >
         {imageUrl && (
           <a href={imageUrl} target="_blank" rel="noopener noreferrer">
-            <div className="relative aspect-[4/3] w-48 max-w-full overflow-hidden rounded-xl sm:w-56">
-              <Image
-                src={imageUrl}
-                alt="Pièce jointe"
-                fill
-                sizes="224px"
-                className="object-cover"
-              />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageUrl}
+              alt="Photo du problème"
+              className="block max-h-64 w-48 rounded-xl object-cover sm:w-56"
+              onError={() => setImgBroken(true)}
+            />
           </a>
         )}
-        {msg.contenu && msg.contenu !== "📷 Photo" && (
-          <p className={cn("leading-relaxed", imageUrl && "px-3 py-2")}>
+        {rawAttachment && isImageType && imgBroken && (
+          <p className={cn("px-3 py-2 text-xs", isMe ? "text-white/80" : "text-neutral-500")}>
+            📷 Photo (aperçu indisponible)
+          </p>
+        )}
+        {audioUrl && (
+          <AudioPlayer
+            src={audioUrl}
+            isMe={isMe}
+            durationHint={msg.dureeFichier}
+          />
+        )}
+        {showText && (
+          <p className={cn("leading-relaxed", hasMedia && "px-3 py-2")}>
             {msg.contenu}
           </p>
         )}
@@ -217,12 +252,13 @@ export default function ConversationPage({
     try {
       if (savedFile) {
         const { sendMessageWithAttachment } = await import("@/lib/api/messages");
-        await sendMessageWithAttachment({
+        const sent = await sendMessageWithAttachment({
           expediteur: utilisateur._id,
           destinataire: destinataireId,
-          contenu: savedText,
+          contenu: savedText || undefined,
           file: savedFile,
         });
+        handleNewMessage(sent);
       } else {
         await sendHttp(payload);
       }
@@ -231,6 +267,30 @@ export default function ConversationPage({
       setInputText(savedText);
     }
   };
+
+  const handleVoiceSend = useCallback(async (blob: Blob, durationSeconds: number) => {
+    if (!utilisateur) return;
+    const destinataireId = getDestinataireId();
+    if (!destinataireId) {
+      toast.error("Destinataire introuvable.");
+      return;
+    }
+    try {
+      const ext = blob.type.includes("ogg") ? "ogg" : "webm";
+      const audioFile = new File([blob], `vocal.${ext}`, { type: blob.type });
+      const { sendMessageWithAttachment } = await import("@/lib/api/messages");
+      const sent = await sendMessageWithAttachment({
+        expediteur: utilisateur._id,
+        destinataire: destinataireId,
+        file: audioFile,
+        dureeFichier: durationSeconds,
+      });
+      handleNewMessage(sent);
+    } catch {
+      toast.error("Vocal non envoyé. Réessayez.");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [utilisateur]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputText(e.target.value);
@@ -321,7 +381,7 @@ export default function ConversationPage({
       >
         <EmojiPicker onSelect={insertEmoji} />
         <label htmlFor="message-attachment" className="sr-only">
-          Joindre une image
+          Joindre une photo du problème
         </label>
         <input
           id="message-attachment"
@@ -330,16 +390,18 @@ export default function ConversationPage({
           accept="image/*"
           className="hidden"
           onChange={handleFileSelect}
-          aria-label="Joindre une image"
+          aria-label="Joindre une photo"
         />
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
-          aria-label="Joindre une image"
+          aria-label="Envoyer une photo du problème"
+          title="Photo du problème"
         >
           <ImagePlus className="h-5 w-5" />
         </button>
+        <VoiceRecorder onSend={handleVoiceSend} disabled={sending} />
         <textarea
           value={inputText}
           onChange={handleInputChange}
@@ -349,9 +411,9 @@ export default function ConversationPage({
               handleSend(e as unknown as React.FormEvent);
             }
           }}
-          placeholder="Écrivez un message…"
+          placeholder="Message (optionnel si photo ou vocal)"
           rows={1}
-          className="max-h-32 min-h-[2.5rem] flex-1 resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          className="max-h-32 min-h-10 flex-1 resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
         />
         <Button
           type="submit"

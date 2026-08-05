@@ -29,10 +29,15 @@ export interface Article {
   _id?: string;
   nomArticle: string;
   prixArticle: number;
+  ancienPrixArticle?: number;
+  discountPercent?: number;
+  isPromo?: boolean;
   quantiteArticle?: number;
   photoArticle?: string;
   description?: string;
   rating?: number;
+  salesCount?: number;
+  tags?: string[];
   categorie?: string | Categorie;
   vendeur?: string | Vendeur;
 }

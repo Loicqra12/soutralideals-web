@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { globalSearch } from "@/lib/api/search";
@@ -71,10 +72,16 @@ function ResultCard({ tab, item }: { tab: TabKey; item: Record<string, unknown> 
           className="relative overflow-hidden rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm transition-shadow group-hover:shadow-md"
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-neutral-100 text-lg font-bold text-neutral-400">
+            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-neutral-100 text-lg font-bold text-neutral-400">
               {tab === "articles" && item.photoArticle ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={String(item.photoArticle)} alt="" className="h-full w-full object-cover" />
+                <Image
+                  src={String(item.photoArticle)}
+                  alt={String(item.nomArticle ?? "")}
+                  fill
+                  className="object-cover"
+                  sizes="48px"
+                  unoptimized
+                />
               ) : tab === "vendeurs" ? (
                 <ShoppingBag className="h-5 w-5" />
               ) : (

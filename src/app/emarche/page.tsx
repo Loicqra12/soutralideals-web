@@ -21,8 +21,8 @@ function EmarcheContent() {
   const [search, setSearch] = useState(q || categorieParam);
 
   const { data: categories, isLoading: loadingCategories } = useCategoriesByPole("emarche");
-  const { data: articles, isLoading: loadingArticles } = useArticles();
-  const { data: vendeurs, isLoading: loadingVendeurs } = useVendeurs();
+  const { data: articles, isLoading: loadingArticles, error: articlesError } = useArticles();
+  const { data: vendeurs, isLoading: loadingVendeurs, error: vendeursError } = useVendeurs();
 
   const filteredArticles = useMemo(() => {
     return (articles ?? []).filter((article) => {
@@ -79,7 +79,14 @@ function EmarcheContent() {
 
           {loadingArticles && <ArticleSkeletonGrid count={10} />}
 
-          {!loadingArticles && filteredArticles.length === 0 && (
+          {!loadingArticles && articlesError && (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-red-100 bg-red-50 py-16 text-center">
+              <p className="font-semibold text-red-700">Impossible de charger les produits</p>
+              <p className="mt-1 text-sm text-red-500">Vérifiez votre connexion et réessayez.</p>
+            </div>
+          )}
+
+          {!loadingArticles && !articlesError && filteredArticles.length === 0 && (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-200 bg-white py-16 text-center">
               <p className="font-semibold text-neutral-900">Aucun produit trouvé</p>
               <p className="mt-1 text-sm text-neutral-500">Essayez un autre mot-clé.</p>

@@ -16,7 +16,8 @@ export interface Message {
   statut: "ENVOYE" | "DELIVRE" | "LU";
   typeMessage?: string;
   pieceJointe?: string;
-  typePieceJointe?: string;
+  typePieceJointe?: "IMAGE" | "AUDIO" | "VIDEO" | "DOCUMENT";
+  dureeFichier?: number;
   conversationId: string;
   createdAt?: string;
 }
@@ -89,16 +90,19 @@ export async function sendMessage(payload: {
 export async function sendMessageWithAttachment(payload: {
   expediteur: string;
   destinataire: string;
-  contenu: string;
+  contenu?: string;
   file: File;
   typeMessage?: string;
+  dureeFichier?: number;
 }): Promise<Message> {
   const formData = new FormData();
   formData.append("expediteur", payload.expediteur);
   formData.append("destinataire", payload.destinataire);
-  formData.append("contenu", payload.contenu || "📷 Photo");
+  if (payload.contenu) formData.append("contenu", payload.contenu);
   formData.append("pieceJointe", payload.file);
   if (payload.typeMessage) formData.append("typeMessage", payload.typeMessage);
+  if (payload.dureeFichier != null)
+    formData.append("dureeFichier", String(payload.dureeFichier));
   return postMultipart<Message>("message", formData);
 }
 

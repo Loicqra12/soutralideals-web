@@ -26,6 +26,7 @@ export default function InscriptionPage() {
   const [otpCode, setOtpCode] = useState("");
   const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
   const [devCodeHint, setDevCodeHint] = useState<string | null>(null);
+  const [otpSkipped, setOtpSkipped] = useState(false);
   const [form, setForm] = useState({
     nom: "",
     prenom: "",
@@ -79,7 +80,7 @@ export default function InscriptionPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!phoneVerificationToken) {
+    if (!phoneVerificationToken && !otpSkipped) {
       setError("Vérifiez votre numéro de téléphone avant de continuer.");
       setStep("phone");
       return;
@@ -175,6 +176,20 @@ export default function InscriptionPage() {
             )}
           </Button>
 
+          {error && (
+            <button
+              type="button"
+              className="w-full text-center text-sm text-neutral-500 hover:text-neutral-700 hover:underline"
+              onClick={() => {
+                setOtpSkipped(true);
+                setError("");
+                setStep("form");
+              }}
+            >
+              Continuer sans vérification SMS →
+            </button>
+          )}
+
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-neutral-200" />
@@ -249,9 +264,15 @@ export default function InscriptionPage() {
 
       {step === "form" && (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
-            Téléphone vérifié : {form.telephone}
-          </div>
+          {otpSkipped ? (
+            <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Téléphone non vérifié — vous pourrez le vérifier plus tard.
+            </div>
+          ) : (
+            <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
+              Téléphone vérifié : {form.telephone}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="prenom" className="mb-1.5 block text-sm font-medium text-neutral-700">

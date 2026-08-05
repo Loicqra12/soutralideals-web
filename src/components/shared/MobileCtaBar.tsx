@@ -64,7 +64,7 @@ export function MobileCtaBar({
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary-600 px-3 py-2.5 text-sm font-medium text-white"
           >
             <Calendar className="h-4 w-4" />
-            Devis
+            Contacter
           </button>
         ) : null}
       </div>

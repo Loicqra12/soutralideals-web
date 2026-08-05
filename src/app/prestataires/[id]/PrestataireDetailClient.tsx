@@ -259,7 +259,7 @@ export default function PrestataireDetailClient({
                     onClick={() => setShowDevis(true)}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
-                    Demander un devis
+                    Demander un service
                   </Button>
 
                   {phoneLink && (

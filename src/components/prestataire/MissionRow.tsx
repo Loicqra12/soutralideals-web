@@ -93,7 +93,7 @@ export function MissionEmptyState() {
         Aucune mission pour le moment
       </h3>
       <p className="mt-2 max-w-sm text-sm text-neutral-500">
-        Les demandes de devis des clients apparaîtront ici.
+        Les demandes des clients apparaîtront ici.
       </p>
       <Link
         href="/prestataires"

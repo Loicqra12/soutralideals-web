@@ -13,8 +13,8 @@ export interface Avis {
   objetType: AvisObjetType;
   objetId: string;
   note: number;
-  titre: string;
-  commentaire: string;
+  titre?: string;
+  commentaire?: string;
   recommande?: boolean;
   statut?: string;
   utile?: number;
@@ -52,8 +52,8 @@ export async function createAvis(payload: {
   objetType: AvisObjetType;
   objetId: string;
   note: number;
-  titre: string;
-  commentaire: string;
+  titre?: string;
+  commentaire?: string;
   recommande?: boolean;
 }): Promise<Avis> {
   const { data } = await apiClient.post<Avis>("/avis", payload);

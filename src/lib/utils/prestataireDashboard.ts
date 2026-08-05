@@ -26,49 +26,43 @@ export function computeProfileStrength(profile: Prestataire | null | undefined) 
       hint: "Choisissez votre métier principal",
     },
     {
-      id: "ville",
-      label: "Zone d'activité",
-      done: !!(profile.ville || profile.localisation),
-      hint: "Indiquez votre ville ou quartier",
-    },
-    {
-      id: "cni",
-      label: "Pièce d'identité (CNI)",
-      done: !!(profile.cni1 && profile.cni2),
-      hint: "Recto et verso de votre CNI",
-    },
-    {
-      id: "selfie",
-      label: "Photo selfie",
-      done: !!profile.selfie,
-      hint: "Photo de vérification d'identité",
-    },
-    {
       id: "gps",
-      label: "Position GPS",
+      label: "Position GPS (obligatoire)",
       done: !!(
         profile.localisationmaps?.latitude != null &&
         profile.localisationmaps?.longitude != null
       ),
-      hint: "Activez la géolocalisation",
+      hint: "Requis pour être visible sur la marketplace",
+    },
+    {
+      id: "cni",
+      label: "CNI recto + verso (badge Vérifié)",
+      done: !!(profile.cni1 && profile.cni2),
+      hint: "Optionnel — permet d'obtenir le badge « Identité vérifiée »",
+    },
+    {
+      id: "selfie",
+      label: "Photo selfie (badge Vérifié)",
+      done: !!profile.selfie,
+      hint: "Optionnel — complète la vérification d'identité",
     },
     {
       id: "verifier",
-      label: "Validation Soutrali",
+      label: "Badge « Identité vérifiée »",
       done: !!profile.verifier,
-      hint: "Validation par l'équipe Soutrali",
+      hint: "Attribué après validation de la CNI par l'équipe Soutrali",
     },
   ];
 
   const done = items.filter((i) => i.done).length;
   const total = items.length;
+  // Un profil est visible dès qu'il est "active", avec ou sans badge
   return {
     score: done,
     total,
     percent: Math.round((done / total) * 100),
     items,
-    isVisible:
-      profile.status === "active" && profile.verifier === true,
+    isVisible: profile.status === "active",
   };
 }
 
@@ -94,14 +88,21 @@ export function getPrestataireStatusMessage(
   if (status === "active" && verifier) {
     return {
       tone: "success",
-      message: "Votre profil est visible sur la marketplace.",
+      message: "Votre profil est visible sur la marketplace avec le badge « Identité vérifiée ».",
+    };
+  }
+  if (status === "active" && !verifier) {
+    return {
+      tone: "info",
+      message:
+        "Votre profil est visible sur la marketplace. Ajoutez votre CNI pour obtenir le badge « Identité vérifiée ».",
     };
   }
   if (status === "pending") {
     return {
       tone: "info",
       message:
-        "Votre dossier est en cours de vérification par l'équipe Soutrali.",
+        "Votre dossier est en cours de vérification par l'équipe Soutrali (24–48 h ouvrées).",
     };
   }
   if (status === "rejected") {
@@ -113,7 +114,7 @@ export function getPrestataireStatusMessage(
   return {
     tone: "warning",
     message:
-      "Complétez votre identité (CNI, selfie, GPS) pour soumettre votre profil à validation.",
+      "Définissez votre zone GPS pour soumettre votre profil. La CNI est optionnelle (badge seulement).",
   };
 }
 

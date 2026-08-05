@@ -84,10 +84,20 @@ export interface FinalizationStatusResponse {
   status: string;
   finalizationStatus: {
     isComplete: boolean;
+    canGetBadge?: boolean;
     requiredDocs: {
+      location: boolean;
+      cni?: boolean;
+      selfie?: boolean;
+    };
+    identityDocs?: {
       cni: boolean;
       selfie: boolean;
-      location: boolean;
+    };
+    optionalDocs?: {
+      certificates: boolean;
+      insurance: boolean;
+      portfolio: boolean;
     };
   };
 }
@@ -149,14 +159,12 @@ export async function submitPrestataireFinalization(
     selfie = res.url;
   }
 
-  if (!cni1 || !cni2 || !selfie) {
-    throw new Error("CNI recto, CNI verso et selfie sont obligatoires.");
-  }
-
+  // CNI + selfie optionnels → badge "Identité vérifiée" seulement
+  // Localisation seule suffit pour publier le profil
   return finalizePrestataireProfile(prestataireId, {
-    cni1,
-    cni2,
-    selfie,
+    ...(cni1 ? { cni1 } : {}),
+    ...(cni2 ? { cni2 } : {}),
+    ...(selfie ? { selfie } : {}),
     localisation: input.localisation,
     localisationmaps: input.localisationmaps,
   });

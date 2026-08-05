@@ -12,7 +12,6 @@ import {
   type AvisObjetType,
 } from "@/lib/api/avis";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +48,7 @@ function StarRatingInput({
   );
 }
 
-function AvisCard({ avis }: { avis: { _id: string; auteur?: { nom?: string; prenom?: string }; note: number; titre: string; commentaire: string; recommande?: boolean; createdAt?: string } }) {
+function AvisCard({ avis }: { avis: { _id: string; auteur?: { nom?: string; prenom?: string }; note: number; titre?: string; commentaire?: string; recommande?: boolean; createdAt?: string } }) {
   const authorName =
     avis.auteur
       ? `${avis.auteur.prenom ?? ""} ${avis.auteur.nom ?? ""}`.trim() || "Anonyme"
@@ -77,10 +76,14 @@ function AvisCard({ avis }: { avis: { _id: string; auteur?: { nom?: string; pren
               ))}
             </div>
           </div>
-          <p className="mt-2 text-sm font-medium text-neutral-900">{avis.titre}</p>
-          <p className="mt-1 text-sm leading-relaxed text-neutral-600">
-            {avis.commentaire}
-          </p>
+          {avis.titre && (
+            <p className="mt-2 text-sm font-medium text-neutral-900">{avis.titre}</p>
+          )}
+          {avis.commentaire && (
+            <p className="mt-1 text-sm leading-relaxed text-neutral-600">
+              {avis.commentaire}
+            </p>
+          )}
           {avis.recommande && (
             <span className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-600">
               <ThumbsUp className="h-3 w-3" /> Recommande
@@ -103,9 +106,7 @@ export function AvisSection({ objetType, objetId }: AvisSectionProps) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     note: 0,
-    titre: "",
     commentaire: "",
-    recommande: true,
   });
 
   const { data: avisData, isLoading: avisLoading } = useQuery({
@@ -124,14 +125,12 @@ export function AvisSection({ objetType, objetId }: AvisSectionProps) {
         objetType,
         objetId,
         note: form.note,
-        titre: form.titre,
-        commentaire: form.commentaire,
-        recommande: form.recommande,
+        ...(form.commentaire.trim() ? { commentaire: form.commentaire.trim() } : {}),
       }),
     onSuccess: () => {
       toast.success("Merci pour votre avis !");
       setShowForm(false);
-      setForm({ note: 0, titre: "", commentaire: "", recommande: true });
+      setForm({ note: 0, commentaire: "" });
       queryClient.invalidateQueries({ queryKey: ["avis", objetType, objetId] });
       queryClient.invalidateQueries({ queryKey: ["avis-stats", objetType, objetId] });
     },
@@ -143,10 +142,6 @@ export function AvisSection({ objetType, objetId }: AvisSectionProps) {
     e.preventDefault();
     if (form.note === 0) {
       toast.error("Sélectionnez une note.");
-      return;
-    }
-    if (!form.titre.trim() || !form.commentaire.trim()) {
-      toast.error("Titre et commentaire sont requis.");
       return;
     }
     submitAvis();
@@ -210,7 +205,7 @@ export function AvisSection({ objetType, objetId }: AvisSectionProps) {
             >
               <div>
                 <p className="mb-2 text-sm font-medium text-neutral-700">
-                  Votre note
+                  Votre note <span className="text-red-500">*</span>
                 </p>
                 <StarRatingInput
                   value={form.note}
@@ -219,50 +214,29 @@ export function AvisSection({ objetType, objetId }: AvisSectionProps) {
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-neutral-700">
-                  Titre de l&apos;avis
-                </label>
-                <Input
-                  value={form.titre}
-                  onChange={(e) => setForm((p) => ({ ...p, titre: e.target.value }))}
-                  placeholder="Résumez votre expérience"
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-neutral-700">
-                  Commentaire
+                  Commentaire{" "}
+                  <span className="font-normal text-neutral-400">(optionnel)</span>
                 </label>
                 <textarea
                   value={form.commentaire}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, commentaire: e.target.value }))
                   }
-                  placeholder="Partagez votre expérience en détail…"
-                  rows={4}
-                  required
+                  placeholder="Décrivez votre expérience…"
+                  rows={3}
+                  maxLength={1000}
                   className="w-full resize-none rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                 />
               </div>
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-700">
-                <input
-                  type="checkbox"
-                  checked={form.recommande}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, recommande: e.target.checked }))
-                  }
-                  className="h-4 w-4 rounded accent-neutral-900"
-                />
-                Je recommande
-              </label>
               <div className="flex gap-2">
-                <Button type="submit" disabled={isPending} size="sm">
-                  {isPending ? "Publication…" : "Publier l'avis"}
+                <Button type="submit" disabled={isPending || form.note === 0} size="sm">
+                  {isPending ? "Publication…" : "Publier"}
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowForm(false)}
+                  onClick={() => { setShowForm(false); setForm({ note: 0, commentaire: "" }); }}
                 >
                   Annuler
                 </Button>

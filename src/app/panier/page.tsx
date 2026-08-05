@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Loader2, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
@@ -166,8 +167,22 @@ export default function PanierPage() {
                       className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm"
                     >
                       <div className="flex items-center gap-4 p-4">
-                        {/* Placeholder image */}
-                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100" />
+                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
+                          {item.imageArticle ? (
+                            <Image
+                              src={item.imageArticle}
+                              alt={name}
+                              fill
+                              className="object-cover"
+                              sizes="64px"
+                              unoptimized={item.imageArticle.startsWith("http")}
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center">
+                              <ShoppingBag className="h-6 w-6 text-neutral-300" />
+                            </div>
+                          )}
+                        </div>
 
                         <div className="flex flex-1 flex-col gap-1">
                           <p className="font-medium text-neutral-900">{name}</p>

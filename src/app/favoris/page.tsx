@@ -26,7 +26,7 @@ const TYPE_HREF: Record<FavoriteType, (id: string) => string> = {
   PRESTATAIRE: (id) => `/prestataires/${id}`,
   FREELANCE: (id) => `/freelance/${id}`,
   ARTICLE: (id) => `/emarche/${id}`,
-  VENDEUR: (id) => `/emarche`,
+  VENDEUR: (id) => `/boutique/${id}`,
 };
 
 const TYPE_LABELS: Record<FavoriteType, string> = {
@@ -38,7 +38,7 @@ const TYPE_LABELS: Record<FavoriteType, string> = {
 
 export default function FavorisPage() {
   const [typeFilter, setTypeFilter] = useState<FavoriteType | "">("");
-  const { data: allFavorites, isLoading: loadingAll } = useFavorites();
+  const { data: allFavorites, isLoading: loadingAll, error: favError } = useFavorites();
   const { data: filteredFavorites, isLoading: loadingFiltered } = useFavorites(
     typeFilter || undefined,
   );
@@ -153,7 +153,15 @@ export default function FavorisPage() {
             </div>
           )}
 
-          {!isLoading && list.length === 0 && (
+          {!isLoading && favError && (
+            <div className="flex flex-col items-center rounded-2xl border border-dashed border-red-100 bg-red-50 py-16 text-center">
+              <Heart className="h-10 w-10 text-red-200" />
+              <p className="mt-4 font-semibold text-red-700">Impossible de charger vos favoris</p>
+              <p className="mt-1 text-sm text-red-500">Vérifiez votre connexion ou reconnectez-vous.</p>
+            </div>
+          )}
+
+          {!isLoading && !favError && list.length === 0 && (
             <div className="flex flex-col items-center rounded-2xl border border-dashed border-neutral-200 bg-white py-20 text-center">
               <Heart className="h-14 w-14 text-neutral-200" />
               <p className="mt-4 text-lg font-semibold text-neutral-900">

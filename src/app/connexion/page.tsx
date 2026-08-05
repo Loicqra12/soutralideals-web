@@ -72,9 +72,17 @@ function ConnexionForm() {
           />
         </div>
         <div>
-          <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-neutral-700">
-            Mot de passe
-          </label>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label htmlFor="password" className="text-sm font-medium text-neutral-700">
+              Mot de passe
+            </label>
+            <Link
+              href="/mot-de-passe-oublie"
+              className="text-xs text-primary-600 hover:text-primary-700 hover:underline"
+            >
+              Mot de passe oublié ?
+            </Link>
+          </div>
           <PasswordInput
             id="password"
             value={password}

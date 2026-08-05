@@ -77,13 +77,13 @@ export function PrestataireCard({
             )}
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            {/* Verified pill */}
-            {prestataire.verifier && (
-              <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-primary-700 shadow-sm backdrop-blur-sm">
-                <BadgeCheck className="h-3.5 w-3.5" />
-                Vérifié
+            {/* Badge identité */}
+            {prestataire.verifier ? (
+              <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-emerald-700 shadow-sm backdrop-blur-sm">
+                <BadgeCheck className="h-3.5 w-3.5 text-emerald-600" />
+                Identité vérifiée
               </div>
-            )}
+            ) : null}
             {/* Favorite button */}
             <FavoriteButton
               objetType="PRESTATAIRE"

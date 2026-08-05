@@ -38,7 +38,7 @@ const ONBOARDING_STEPS = [
   {
     title: "Complétez votre profil",
     desc: "Photo, description et zone d'activité pour inspirer confiance.",
-    href: "/profile",
+    href: "/prestataire/profil",
     cta: "Compléter",
   },
   {

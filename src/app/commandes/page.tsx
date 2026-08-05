@@ -195,6 +195,15 @@ export default function CommandesPage() {
                                   </div>
                                 ))}
                               </div>
+
+                              <div className="mt-4">
+                                <Link
+                                  href={`/commandes/${cmd._id}`}
+                                  className="text-xs font-medium text-primary-600 hover:underline"
+                                >
+                                  Voir le détail complet →
+                                </Link>
+                              </div>
                             </div>
                           </motion.div>
                         )}
