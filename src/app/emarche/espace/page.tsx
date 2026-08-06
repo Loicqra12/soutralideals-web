@@ -282,20 +282,14 @@ export default function EmarcheEspacePage() {
   const qc = useQueryClient();
   const utilisateur = useAuthStore((s) => s.utilisateur);
   const { data: shop, isLoading: shopLoading } = useMyVendeur();
-  const { data: allArticles = [], isLoading: articlesLoading } = useQuery({
-    queryKey: ["articles"],
-    queryFn: fetchArticles,
+  const { data: myArticles = [], isLoading: articlesLoading } = useQuery({
+    queryKey: ["articles", { vendeur: shop?._id }],
+    queryFn: () => fetchArticles({ vendeur: shop!._id }),
+    enabled: Boolean(shop?._id),
     staleTime: 2 * 60 * 1000,
   });
 
   const [modal, setModal] = useState<"create" | Article | null>(null);
-
-  const myArticles = shop?._id
-    ? allArticles.filter((a) => {
-        const v = a.vendeur;
-        return (typeof v === "string" ? v : v?._id) === shop._id;
-      })
-    : [];
 
   const inStock = myArticles.filter((a) => (a.quantiteArticle ?? 0) > 0).length;
 

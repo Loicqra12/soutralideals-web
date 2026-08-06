@@ -30,15 +30,10 @@ export function BoutiqueDetailClient({ id }: Props) {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: allArticles = [], isLoading: articlesLoading } = useQuery({
-    queryKey: ["articles"],
-    queryFn: fetchArticles,
+  const { data: articles = [], isLoading: articlesLoading } = useQuery({
+    queryKey: ["articles", { vendeur: id }],
+    queryFn: () => fetchArticles({ vendeur: id }),
     staleTime: 5 * 60 * 1000,
-  });
-
-  const articles = allArticles.filter((a) => {
-    const v = a.vendeur;
-    return (typeof v === "string" ? v : v?._id) === id;
   });
 
   if (shopLoading) {
