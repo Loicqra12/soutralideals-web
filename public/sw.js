@@ -1,4 +1,4 @@
-const CACHE_NAME = "soutrali-v2";
+const CACHE_NAME = "soutrali-v3";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",
@@ -27,13 +27,26 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// Le Cache Storage n'accepte que les GET : toute autre méthode doit
+// court-circuiter le service worker pour laisser remonter la vraie réponse.
+function isCacheable(request) {
+  return request.method === "GET";
+}
+
 // Stratégie : Network First (API) / Cache First (assets statiques)
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
+  const { request } = event;
 
-  // Ne pas cacher les requêtes API ou auth - laisser passer directement au réseau
+  // Non-GET (POST login, upload, etc.) : le navigateur gère seul la requête,
+  // sinon une erreur réseau serait masquée en net::ERR_FAILED.
+  if (!isCacheable(request)) {
+    return;
+  }
+
+  const url = new URL(request.url);
+
+  // Requêtes API et auth : réseau direct, jamais de cache.
   if (url.pathname.startsWith("/api/")) {
-    event.respondWith(fetch(event.request));
     return;
   }
 
@@ -42,14 +55,17 @@ self.addEventListener("fetch", (event) => {
     url.pathname.match(/\.(png|jpg|jpeg|webp|svg|ico|woff|woff2|css|js)$/)
   ) {
     event.respondWith(
-      caches.match(event.request).then(
+      caches.match(request).then(
         (cached) =>
           cached ||
-          fetch(event.request).then((response) => {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) =>
-              cache.put(event.request, clone),
-            );
+          fetch(request).then((response) => {
+            if (response.ok) {
+              const clone = response.clone();
+              caches
+                .open(CACHE_NAME)
+                .then((cache) => cache.put(request, clone))
+                .catch(() => {});
+            }
             return response;
           }),
       ),
@@ -59,20 +75,25 @@ self.addEventListener("fetch", (event) => {
 
   // Network First pour les pages HTML
   event.respondWith(
-    fetch(event.request)
+    fetch(request)
       .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) =>
-          cache.put(event.request, clone),
-        );
+        if (response.ok) {
+          const clone = response.clone();
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put(request, clone))
+            .catch(() => {});
+        }
         return response;
       })
       .catch(async () => {
-        const cached = await caches.match(event.request);
+        const cached = await caches.match(request);
         if (cached) return cached;
-        if (event.request.mode === "navigate") {
-          return caches.match("/offline");
+        if (request.mode === "navigate") {
+          const offline = await caches.match("/offline");
+          if (offline) return offline;
         }
+        return Response.error();
       }),
   );
 });
