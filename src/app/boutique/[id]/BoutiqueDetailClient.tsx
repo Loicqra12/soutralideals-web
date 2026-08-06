@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArticleCard } from "@/components/emarche/ArticleCard";
 import { EntityImage } from "@/components/shared/EntityImage";
-import { CardSkeleton } from "@/components/shared/CardSkeleton";
+import { CardSkeletonGrid } from "@/components/shared/CardSkeleton";
 import { fetchVendeurById } from "@/lib/api/vendeurs";
 import { fetchArticles } from "@/lib/api/articles";
 import { formatPriceFCFA } from "@/lib/utils/format";
@@ -45,9 +45,7 @@ export function BoutiqueDetailClient({ id }: Props) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-10">
         <div className="mb-8 h-40 animate-pulse rounded-2xl bg-neutral-200" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
-        </div>
+        <CardSkeletonGrid count={8} />
       </div>
     );
   }
@@ -160,9 +158,7 @@ export function BoutiqueDetailClient({ id }: Props) {
         </div>
 
         {articlesLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
-          </div>
+          <CardSkeletonGrid count={8} />
         ) : articles.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <ShoppingBag className="h-12 w-12 text-neutral-200" />
