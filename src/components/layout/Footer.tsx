@@ -223,6 +223,11 @@ export function Footer() {
                     <FooterLink href="/confidentialite">Confidentialité</FooterLink>
                   </li>
                   <li>
+                    <FooterLink href="/suppression-compte">
+                      Suppression de compte
+                    </FooterLink>
+                  </li>
+                  <li>
                     <FooterLink href="/cookies">Cookies</FooterLink>
                   </li>
                   <li>
@@ -313,6 +318,7 @@ export function Footer() {
               <FooterLink href="/cgu">CGU</FooterLink>
               <FooterLink href="/cgv">CGV</FooterLink>
               <FooterLink href="/confidentialite">Confidentialité</FooterLink>
+              <FooterLink href="/suppression-compte">Suppression compte</FooterLink>
             </div>
           </div>
         </div>
